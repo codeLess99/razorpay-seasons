@@ -105,13 +105,27 @@ What the numbers showed: ${clip(body.context, 900)}
 The merchant's own notes: """${clip(body.notes, 1200)}"""
 
 Turn the notes into 1 to 4 specific changes for the NEXT plan. Each item:
-- signal: what happened, in under 10 words, in the merchant's terms.
-- change: one concrete change Seasons will make next time (timing, amount, channel, or what to ignore), under 25 words.
-- layer: "year" for season planning, "month" for monthly payment timing, "week" for weekly patterns.
-Rules: only use facts from the notes and numbers; never invent figures. If something was a one-off (weather, a broken machine, travel), the change is to flag it so it does not distort next year's forecast. Never suggest messaging customers who have not opted in, and never suggest a discount above ${Number(body.discountCap) || 20}%. Plain English.`;
+- signal: what happened, under 10 words, in the merchant's terms.
+- change: one concrete change to next season's plan, under 25 words.
+- layer: "year" = the season plan made weeks before a peak (stock, funding, messages to past buyers, delivery cut-off dates); "month" = when monthly payment links or reminders go out; "week" = weekday and time-of-day patterns.
+
+Rules you must follow:
+1. Use only facts in the notes and numbers. Never write a number, percentage or amount that does not appear above. Say "more", "earlier" or "2 weeks earlier" only if the notes support it.
+2. Seasons never acts on its own. Every customer message or money step stays a suggestion the merchant approves. Never suggest automating, auto-sending or skipping approval.
+3. Find the real cause. If sales fell because stock ran out or delivery failed, that is a supply problem: do not lower the demand forecast for it.
+4. If something was a one-off (weather, a broken machine, travel), the change is to flag it so it does not distort next year's forecast.
+5. Never suggest messaging customers who have not opted in, or a discount above ${Number(body.discountCap) || 20}%.
+Plain, short English.`;
       const { out, model } = await gemini(prompt, lessonsSchema);
       const lessons = (Array.isArray(out?.lessons) ? out.lessons : [])
         .filter((l: Record<string, string>) => l && l.signal && l.change && ['year', 'month', 'week'].includes(l.layer))
+        // Seasons' checks: drop anything that acts without approval or invents a figure.
+        .filter((l: Record<string, string>) => !/(automat|auto-send|without (your )?approval|skip(ping)? approval)/i.test(l.change))
+        .filter((l: Record<string, string>) => {
+          const source = `${body.notes ?? ''} ${body.context ?? ''}`;
+          const nums = `${l.signal} ${l.change}`.match(/\d+(\.\d+)?\s?%|₹\s?[\d,]+/g) ?? [];
+          return nums.every((n) => source.replace(/[\s,]/g, '').includes(n.replace(/[\s,]/g, '')));
+        })
         .slice(0, 4)
         .map((l: Record<string, string>) => ({ signal: clip(l.signal, 90), change: clip(l.change, 220), layer: l.layer }));
       if (!lessons.length) throw new Error('empty');
