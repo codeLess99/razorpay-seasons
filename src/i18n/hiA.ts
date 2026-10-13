@@ -57,7 +57,7 @@ export const hiA: Record<string, string> = {
   'ACs, coolers & appliances': 'AC, कूलर और अप्लायंस',
   'Simulated date ·': 'सिम्युलेटेड तारीख़ ·',
   'Prototype for the Razorpay AI PM Build Challenge (ISB, 2026). Not a live Razorpay product.': 'Razorpay AI PM Build Challenge (ISB, 2026) के लिए प्रोटोटाइप। यह Razorpay का लाइव प्रोडक्ट नहीं है।',
-  'All merchants and numbers are synthetic, modelled on one real merchant’s payment pattern and one merchant interview. Benchmarks marked “similar merchants” are illustrative.': 'सभी व्यापारी और आँकड़े काल्पनिक हैं, एक असली व्यापारी के पेमेंट पैटर्न और एक इंटरव्यू पर आधारित। “मिलते-जुलते व्यापारी” वाले बेंचमार्क सिर्फ़ उदाहरण हैं।',
+  'All merchants and numbers are synthetic, shaped on interviews with nine merchants and one real merchant’s payment pattern. Benchmarks marked “similar merchants” are illustrative.': 'सभी व्यापारी और आँकड़े काल्पनिक हैं, नौ व्यापारियों के इंटरव्यू और एक असली व्यापारी के पेमेंट पैटर्न पर आधारित। “मिलते-जुलते व्यापारी” वाले बेंचमार्क सिर्फ़ उदाहरण हैं।',
 
   // overview
   'Your year, and what’s coming': 'आपका साल, और आगे क्या है',

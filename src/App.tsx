@@ -18,7 +18,7 @@ function Content() {
             <V />
             <p className="footer-note">
               Prototype for the Razorpay AI PM Build Challenge (ISB, 2026). Not a live Razorpay product.<br />
-              All merchants and numbers are synthetic, modelled on one real merchant’s payment pattern and one merchant interview. Benchmarks marked “similar merchants” are illustrative.
+              All merchants and numbers are synthetic, shaped on interviews with nine merchants and one real merchant’s payment pattern. Benchmarks marked “similar merchants” are illustrative.
             </p>
           </div>
         </main>
