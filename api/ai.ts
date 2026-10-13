@@ -115,7 +115,7 @@ Rules you must follow:
 3. Find the real cause. If sales fell because stock ran out or delivery failed, that is a supply problem: do not lower the demand forecast for it.
 4. If something was a one-off (weather, a broken machine, travel), the change is to flag it so it does not distort next year's forecast.
 5. Never suggest messaging customers who have not opted in, or a discount above ${Number(body.discountCap) || 20}%.
-Plain, short English.`;
+${body.lang === 'hi' ? 'Write signal and change in simple, natural Hindi (Devanagari script). Keep product names (Razorpay, WhatsApp, UPI, AutoPay) in English and digits as digits.' : 'Plain, short English.'}`;
       const { out, model } = await gemini(prompt, lessonsSchema);
       const lessons = (Array.isArray(out?.lessons) ? out.lessons : [])
         .filter((l: Record<string, string>) => l && l.signal && l.change && ['year', 'month', 'week'].includes(l.layer))

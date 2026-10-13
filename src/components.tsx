@@ -10,6 +10,7 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
+import { useLang, setLang, DashLang } from './i18n';
 import { products, runsOn, readiness, quickInsights, tourSteps, linkAmount, waCategory, waExampleRate } from './extras';
 import { createTestLinks } from './razorpay';
 import { aiRewrite, RewriteMode } from './ai';
@@ -392,8 +393,9 @@ export function ApprovalDrawer() {
                 {excluded.length > 0 && <Text size="small" color="surface.text.gray.muted">Customers without WhatsApp opt-in are never messaged. You can’t override this.</Text>}
                 {cat && (
                   <div className="wa-cost">
-                    <div><b>WhatsApp cost</b> · {sendCount} {cat} message{sendCount === 1 ? '' : 's'} · about ₹{cost < 10 ? cost.toFixed(2).replace(/\.00$/, '') : Math.round(cost).toLocaleString('en-IN')}</div>
-                    <span>{cat === 'marketing' ? 'Offers and reminders to come back are marketing, the costlier kind.' : 'Payment reminders for something already due are utility, the cheaper kind.'} Charged by your WhatsApp provider, not Razorpay. Example rate ₹{waExampleRate[cat]}/message; your provider’s rate may differ.</span>
+                    <div><b>WhatsApp cost</b> · {`${sendCount} ${cat} message${sendCount === 1 ? '' : 's'} · about ₹${cost < 10 ? cost.toFixed(2).replace(/\.00$/, '') : Math.round(cost).toLocaleString('en-IN')}`}</div>
+                    <span>{cat === 'marketing' ? 'Offers and reminders to come back are marketing, the costlier kind.' : 'Payment reminders for something already due are utility, the cheaper kind.'}</span>
+                    <span>{`Charged by your WhatsApp provider, not Razorpay. Example rate ₹${waExampleRate[cat]}/message; your provider’s rate may differ.`}</span>
                   </div>
                 )}
               </div>
@@ -463,8 +465,8 @@ export function ApprovalDrawer() {
               <>
                 <Text size="small" weight="semibold" color="surface.text.gray.muted">PREVIEW · WHAT {firstSelected ? firstSelected.name.split(' ')[0].toUpperCase() : 'THE CUSTOMER'} SEES</Text>
                 <Phone title={merchant.name} sub="Business account" short>
-                  <span className="wa-day">{a.when.split('·')[0].trim()}</span>
-                  <div className="bubble in"><MessageBody text={fillTemplate(msg, firstSelected?.name ?? 'Customer')} /><span className="time">{(a.when.split('·')[1] ?? ' 7:30 PM').trim()}</span></div>
+                  <span className="wa-day" data-notr>{a.when.split('·')[0].trim()}</span>
+                  <div className="bubble in" data-notr><MessageBody text={fillTemplate(msg, firstSelected?.name ?? 'Customer')} /><span className="time">{(a.when.split('·')[1] ?? ' 7:30 PM').trim()}</span></div>
                 </Phone>
               </>
             ) : (
@@ -728,7 +730,7 @@ export function Tour() {
 
 const dashLangs = [
   { code: 'en', label: 'English', native: 'English', live: true },
-  { code: 'hi', label: 'Hindi', native: 'हिंदी', live: false },
+  { code: 'hi', label: 'Hindi', native: 'हिंदी', live: true },
   { code: 'ta', label: 'Tamil', native: 'தமிழ்', live: false },
   { code: 'te', label: 'Telugu', native: 'తెలుగు', live: false },
   { code: 'mr', label: 'Marathi', native: 'मराठी', live: false },
@@ -737,6 +739,7 @@ const dashLangs = [
 
 export function LanguageSwitch() {
   const { showToast } = useSeasons();
+  const lang = useLang();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -747,19 +750,19 @@ export function LanguageSwitch() {
   return (
     <div className="lang-switch" data-tour="lang" onClick={(e) => e.stopPropagation()}>
       <button className="lang-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <TranslateIcon size="small" color="surface.icon.gray.subtle" />EN<ChevronDownIcon size="xsmall" color="surface.icon.gray.muted" />
+        <TranslateIcon size="small" color="surface.icon.gray.subtle" />{lang === 'hi' ? 'हि' : 'EN'}<ChevronDownIcon size="xsmall" color="surface.icon.gray.muted" />
       </button>
       {open && (
         <div className="lang-menu" role="menu">
           <div className="lang-head">Dashboard language</div>
           {dashLangs.map((l) => (
             <button key={l.code} role="menuitem" className={`lang-item ${l.live ? '' : 'soon'}`}
-              onClick={() => { setOpen(false); if (!l.live) showToast(`${l.label} dashboard coming soon. Customer messages can already go out in Hindi.`); }}>
-              <span>{l.native}{l.native !== l.label && <span className="lang-en"> · {l.label}</span>}</span>
-              {l.live ? <CheckIcon size="small" color="surface.icon.primary.normal" /> : <span className="soon-tag">Coming soon</span>}
+              onClick={() => { setOpen(false); if (l.live) setLang(l.code as DashLang); else showToast(`${l.label} dashboard coming soon. Customer messages can already go out in Hindi.`); }}>
+              <span data-notr>{l.native}{l.native !== l.label && <span className="lang-en"> · {l.label}</span>}</span>
+              {l.live ? (lang === l.code ? <CheckIcon size="small" color="surface.icon.primary.normal" /> : null) : <span className="soon-tag">Coming soon</span>}
             </button>
           ))}
-          <div className="lang-foot">Customer messages: English, हिंदी and Hinglish available now</div>
+          <div className="lang-foot">Customer messages: English, हिंदी and Hinglish</div>
         </div>
       )}
     </div>

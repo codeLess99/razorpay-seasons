@@ -151,7 +151,7 @@ export const tourSteps: TourStep[] = [
   { merchant: 'courtside', view: 'week', target: 'week-heat', title: 'Weekly: regulars and quiet slots', body: 'For a club: regulars who have gone quiet, evenings that run empty, and the best time to message. Every nudge waits for approval.' },
   { merchant: 'thanda', view: 'overview', target: 'readiness', title: 'New on Razorpay? Predictions from day one', body: 'With 3 weeks of data, Seasons predicts from similar merchants (ranges from 50+ businesses, never names) and shows when each layer switches to your own data.' },
   { merchant: 'mithas', view: 'review', target: 'feedback', title: 'It learns after every season', body: 'Seasons compares forecast with what happened, then asks what it couldn’t see. Type a note (or use the example) and Gemini turns it into changes for the next plan. You choose which to keep.' },
-  { merchant: 'mithas', view: 'overview', target: 'lang', title: 'Built for India', body: 'Customer messages already go out in English, हिंदी or Hinglish. The dashboard itself and more languages (Tamil, Telugu, Marathi, Bengali) are coming soon.' },
+  { merchant: 'mithas', view: 'overview', target: 'lang', title: 'Built for India', body: 'Customer messages go out in English, हिंदी or Hinglish, and the dashboard works in English and हिंदी (switch at the top). Tamil, Telugu, Marathi and Bengali are coming soon.' },
   { merchant: 'mithas', view: 'controls', target: 'preferences', title: 'You stay in charge', body: 'Set your discount limit, message cap and quiet hours, switch layers on or off, or pause Seasons. Loosening a protection always asks you to confirm. Everything is in the Activity log.' },
 ];
 

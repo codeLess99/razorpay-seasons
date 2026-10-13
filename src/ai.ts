@@ -1,4 +1,5 @@
 import { Layer, Merchant, lessonsFromFeedback } from './data';
+import { getLang } from './i18n';
 
 export type LessonOut = { signal: string; change: string; layer: Layer };
 export type AiResult<T> = { ok: true; value: T; source: 'gemini' } | { ok: false; value: T; source: 'fallback'; reason: string };
@@ -26,7 +27,7 @@ export async function aiLessons(m: Merchant, notes: string, discountCap: number)
     ...m.review.outcomes.map((o) => `${o.action}: ${o.result}`),
   ].join('; ');
   try {
-    const d = await call({ task: 'lessons', merchant: m.name, type: m.type, season: `${m.review.title} (${m.review.period})`, context, notes, discountCap });
+    const d = await call({ task: 'lessons', lang: getLang(), merchant: m.name, type: m.type, season: `${m.review.title} (${m.review.period})`, context, notes, discountCap });
     if (!Array.isArray(d.lessons) || !d.lessons.length) throw new Error('AI unavailable right now');
     return { ok: true, value: d.lessons, source: 'gemini' };
   } catch (e) {
