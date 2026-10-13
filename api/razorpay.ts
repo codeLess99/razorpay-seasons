@@ -32,7 +32,9 @@ export default async function handler(req: Req, res: Res) {
   const auth = 'Basic ' + Buffer.from(`${keyId}:${secret}`).toString('base64');
   const stamp = Date.now().toString(36);
 
-  const results = await Promise.all(names.map(async (name, i) => {
+  // One at a time: Razorpay can reject bursts of simultaneous requests.
+  const results: { name: string; ok: boolean; id?: string; url?: string; status?: string; error?: string }[] = [];
+  for (const [i, name] of names.entries()) results.push(await (async () => {
     try {
       const r = await fetch('https://api.razorpay.com/v1/payment_links', {
         method: 'POST',
@@ -54,7 +56,7 @@ export default async function handler(req: Req, res: Res) {
     } catch {
       return { name, ok: false, error: 'network' };
     }
-  }));
+  })());
 
   const created = results.filter((r) => r.ok);
   if (!created.length) return res.status(502).json({ error: results[0]?.error ?? 'failed', results });
