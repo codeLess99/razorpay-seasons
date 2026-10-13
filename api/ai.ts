@@ -1,33 +1,62 @@
 // Vercel serverless function: the only place the Gemini key is used.
 // The key comes from the GEMINI_API_KEY environment variable set in Vercel (never in the browser).
+// If the preferred model name has been retired, it asks Google for the current Flash models and picks one.
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const PREFERRED = [process.env.GEMINI_MODEL, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean) as string[];
+let chosenModel: string | null = null; // remembered while this function instance is warm
 
 type Req = { method?: string; body?: unknown };
 type Res = { status: (n: number) => Res; json: (b: unknown) => void; setHeader: (k: string, v: string) => void };
 
 const clip = (s: unknown, n: number) => String(s ?? '').slice(0, n);
+const apiKey = () => process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || process.env.gemini_api_key;
+
+// Ask Google which models this key can use, and pick a current Flash text model.
+async function discoverModel(key: string): Promise<string | null> {
+  const r = await fetch(`${BASE}/models?pageSize=200`, { headers: { 'x-goog-api-key': key } });
+  if (!r.ok) return null;
+  const data = await r.json();
+  const all: string[] = (data?.models ?? [])
+    .filter((m: { supportedGenerationMethods?: string[] }) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
+    .map((m: { name: string }) => String(m.name).replace(/^models\//, ''))
+    .filter((n: string) => /flash/i.test(n) && !/(image|tts|audio|live|embedding)/i.test(n));
+  const stable = all.filter((n) => !/(thinking|exp|preview|lite)/i.test(n));
+  for (const p of PREFERRED) if (all.includes(p)) return p;
+  return stable.sort().reverse()[0] ?? all.sort().reverse()[0] ?? null;
+}
+
+async function generate(model: string, key: string, prompt: string, schema: object, signal: AbortSignal) {
+  return fetch(`${BASE}/models/${model}:generateContent`, {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.4, responseMimeType: 'application/json', responseSchema: schema },
+    }),
+  });
+}
 
 async function gemini(prompt: string, schema: object) {
-  const key = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || process.env.gemini_api_key;
+  const key = apiKey();
   if (!key) throw new Error('no-key');
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 15000);
+  const t = setTimeout(() => ctrl.abort(), 20000);
   try {
-    const r = await fetch(URL, {
-      method: 'POST',
-      signal: ctrl.signal,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, responseMimeType: 'application/json', responseSchema: schema },
-      }),
-    });
+    let model = chosenModel ?? PREFERRED[0];
+    let r = await generate(model, key, prompt, schema, ctrl.signal);
+    if (r.status === 404) {
+      const found = await discoverModel(key);
+      if (!found) throw new Error('gemini-no-model');
+      model = found;
+      r = await generate(model, key, prompt, schema, ctrl.signal);
+    }
     if (!r.ok) throw new Error(`gemini-${r.status}`);
+    chosenModel = model;
     const data = await r.json();
     const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-    return JSON.parse(text);
+    return { out: JSON.parse(text), model };
   } finally {
     clearTimeout(t);
   }
@@ -79,13 +108,13 @@ Turn the notes into 1 to 4 specific changes for the NEXT plan. Each item:
 - change: one concrete change Seasons will make next time (timing, amount, channel, or what to ignore), under 25 words.
 - layer: "year" for season planning, "month" for monthly payment timing, "week" for weekly patterns.
 Rules: only use facts from the notes and numbers; never invent figures. If something was a one-off (weather, a broken machine, travel), the change is to flag it so it does not distort next year's forecast. Never suggest messaging customers who have not opted in, and never suggest a discount above ${Number(body.discountCap) || 20}%. Plain English.`;
-      const out = await gemini(prompt, lessonsSchema);
+      const { out, model } = await gemini(prompt, lessonsSchema);
       const lessons = (Array.isArray(out?.lessons) ? out.lessons : [])
         .filter((l: Record<string, string>) => l && l.signal && l.change && ['year', 'month', 'week'].includes(l.layer))
         .slice(0, 4)
         .map((l: Record<string, string>) => ({ signal: clip(l.signal, 90), change: clip(l.change, 220), layer: l.layer }));
       if (!lessons.length) throw new Error('empty');
-      return res.status(200).json({ lessons, model: MODEL });
+      return res.status(200).json({ lessons, model });
     }
 
     if (body.task === 'rewrite') {
@@ -99,10 +128,10 @@ Strict rules:
 - Return only the message.
 Message:
 """${clip(body.message, 1200)}"""`;
-      const out = await gemini(prompt, rewriteSchema);
+      const { out, model } = await gemini(prompt, rewriteSchema);
       const message = clip(out?.message, 1500).trim();
       if (!message) throw new Error('empty');
-      return res.status(200).json({ message, model: MODEL });
+      return res.status(200).json({ message, model });
     }
 
     return res.status(400).json({ error: 'task' });
