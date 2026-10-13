@@ -10,7 +10,7 @@ type Res = { status: (n: number) => Res; json: (b: unknown) => void; setHeader: 
 const clip = (s: unknown, n: number) => String(s ?? '').slice(0, n);
 
 async function gemini(prompt: string, schema: object) {
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.GEMINI_API_KEY || process.env.Gemini_API_Key || process.env.gemini_api_key;
   if (!key) throw new Error('no-key');
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 15000);
