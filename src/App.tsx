@@ -1,7 +1,7 @@
 import { BladeProvider } from '@razorpay/blade/components';
 import { bladeTheme } from '@razorpay/blade/tokens';
 import { Provider, useSeasons } from './state';
-import { TopNav, SideNav, PageHeader, ApprovalDrawer, WhatsAppModal, Toast } from './components';
+import { TopNav, SideNav, PageHeader, ApprovalDrawer, WhatsAppModal, Toast, Tour } from './components';
 import { Overview, YearView, MonthView, WeekView, ReviewView, ControlsView, ActivityView } from './views';
 
 function Content() {
@@ -26,6 +26,7 @@ function Content() {
       <ApprovalDrawer />
       <WhatsAppModal />
       <Toast />
+      <Tour />
     </div>
   );
 }

@@ -12,3 +12,5 @@ Seasons learns when each merchant's customers pay (across the year, month and we
 npm install
 npm run dev
 ```
+
+See [USER_JOURNEY.md](USER_JOURNEY.md) for the step-by-step merchant journey, or use **Take the tour** in the app.

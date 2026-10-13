@@ -57,6 +57,9 @@ interface Ctx {
   settings: Settings;
   updateSettings: (s: Partial<Settings>) => void;
   pendingCount: (layer?: Layer) => number;
+  addLog: (actor: LogEntry['actor'], text: string) => void;
+  tourStep: number | null;
+  setTourStep: (n: number | null) => void;
 }
 
 const C = createContext<Ctx | null>(null);
@@ -73,6 +76,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const [lessons, setLessons] = useState<Record<string, Lesson[]>>({});
   const [settingsMap, setSettingsMap] = useState<Record<string, Settings>>({});
+  const [tourStep, setTourStep] = useState<number | null>(null);
 
   const merchant = useMemo(() => merchants.find((m) => m.id === merchantId)!, [merchantId]);
   const settings = settingsMap[merchantId] ?? defaultSettings();
@@ -135,7 +139,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const value: Ctx = {
     merchant, merchantId, setMerchantId, view, setView, status, approve, skip, undo, log,
     drawer, openDrawer: setDrawer, waOpen, setWaOpen, toast, showToast,
-    lessons, makeLessons, toggleLesson, settings, updateSettings, pendingCount,
+    lessons, makeLessons, toggleLesson, settings, updateSettings, pendingCount, addLog, tourStep, setTourStep,
   };
   return <C.Provider value={value}>{children}</C.Provider>;
 }

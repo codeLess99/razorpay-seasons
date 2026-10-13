@@ -1,21 +1,20 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ResponsiveContainer, ComposedChart, Bar, Line, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Cell, LineChart, Legend,
 } from 'recharts';
 import {
   Badge, Button, Heading, Text, Switch, TextArea,
-  SparklesIcon, ArrowRightIcon, CalendarIcon, ClockIcon, TrendingUpIcon, LockIcon, PauseIcon, PlayIcon, CheckIcon,
+  SparklesIcon, ArrowRightIcon, CalendarIcon, ClockIcon, TrendingUpIcon, PauseIcon, PlayIcon, CheckIcon,
 } from '@razorpay/blade/components';
 import { useSeasons } from './state';
 import { DAYS, BLOCKS, Layer, formatINR } from './data';
-import { ActionList, Facts, Insight, RayWhatsApp, layerName } from './components';
+import { ActionList, Facts, Insight, RayWhatsApp, layerName, QuickInsights, ReadinessPanel, ConfirmDialog } from './components';
 
 const PRIMARY = 'hsl(218, 89%, 51%)';
 const PRIMARY_LIGHT = 'hsla(218, 89%, 51%, 0.16)';
 const MUTED = 'hsl(204, 9%, 42%)';
 const GRID = 'hsl(204, 8%, 92%)';
 
-const sourceText = { own: 'Your own data', benchmark: 'Similar merchants', early: 'Early signal' };
 
 /* ---------------- Overview ---------------- */
 
@@ -39,19 +38,9 @@ export function Overview() {
         <div className="hero-count"><div className="big">{m.headline.countdown.split(' ')[0]}</div><div className="small">{m.headline.countdown.split(' ').slice(1).join(' ')}</div></div>
       </div>
 
-      <div>
-        <Text size="small" weight="semibold" color="surface.text.gray.muted">WHAT SEASONS IS USING</Text>
-        <div className="source-row">
-          {(['week', 'month', 'year'] as Layer[]).map((l) => (
-            <div className="source" key={l}>
-              <span className={`dot ${m.sources[l].source}`} />
-              <div className="stack gap-4">
-                <Text size="small" weight="semibold">{layerName[l]} · {sourceText[m.sources[l].source]}</Text>
-                <Text size="small" color="surface.text.gray.muted">{m.sources[l].label}</Text>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="grid-insights">
+        <QuickInsights />
+        <ReadinessPanel />
       </div>
 
       <div className="grid-main">
@@ -101,7 +90,7 @@ export function Overview() {
           </div>
         </div>
 
-        <div className="stack gap-8" style={{ alignItems: 'center' }}>
+        <div className="stack gap-8" style={{ alignItems: 'center' }} data-tour="whatsapp">
           <Text size="small" weight="semibold" color="surface.text.gray.muted">HOW {m.name.toUpperCase()} HEARS ABOUT IT</Text>
           <RayWhatsApp onOpen={() => setView(m.headline.layer)} />
         </div>
@@ -125,7 +114,7 @@ export function YearView() {
   return (
     <div className="stack gap-16">
       <Insight>{m.annual.insight}</Insight>
-      <div className="card chart-card">
+      <div className="card chart-card" data-tour="year-chart">
         <div className="row between wrap gap-8">
           <div className="stack gap-4">
             <Heading size="small">{isBench ? 'Expected year (index, Sep = 100)' : 'Your year, and what’s coming'}</Heading>
@@ -192,7 +181,7 @@ export function MonthView() {
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="card card-pad">
+        <div className="card card-pad" data-tour="month-groups">
           <Heading size="small">Customers grouped by when they pay</Heading>
           <Text size="small" color="surface.text.gray.muted">Each person’s link goes out at their own best time</Text>
           <table className="simple mt-12">
@@ -220,21 +209,21 @@ export function WeekView() {
     <div className="stack gap-16">
       <Insight>{m.weekly.insight}</Insight>
       <div className="grid-2">
-        <div className="card card-pad">
+        <div className="card card-pad" data-tour="week-heat">
           <div className="row between"><Heading size="small">Your week</Heading><Badge size="small" color={m.sources.week.source === 'early' ? 'notice' : 'positive'}>{m.sources.week.source === 'early' ? 'Early signal · 3 weeks' : 'Your own data'}</Badge></div>
           <Text size="small" color="surface.text.gray.muted">Darker = more payments</Text>
           <div className="heat mt-12">
             <span />
             {BLOCKS.map((b) => <span key={b} className="hcol">{b}</span>)}
             {DAYS.map((d, di) => (
-              <>
-                <span key={d} className="hlabel">{d}</span>
+              <React.Fragment key={d}>
+                <span className="hlabel">{d}</span>
                 {m.weekly.grid[di].map((v, bi) => (
                   <span key={d + bi} className="cell" title={`${d} ${BLOCKS[bi]}`} style={{ background: `hsla(218, 89%, 51%, ${0.06 + v * 0.9})`, color: v > 0.55 ? '#fff' : 'transparent' }}>
                     {v >= 0.95 ? 'Peak' : v > 0.55 ? 'High' : ''}
                   </span>
                 ))}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -292,7 +281,7 @@ export function ReviewView() {
         </div>
       </div>
 
-      <div className="card card-pad stack gap-12">
+      <div className="card card-pad stack gap-12" data-tour="feedback">
         <div className="stack gap-4">
           <Heading size="small">Tell Seasons what happened</Heading>
           <Text size="small" color="surface.text.gray.muted">Razorpay sees your payments, not your shop floor. Two lines from you help the next plan: {r.prompts.join(' · ')}</Text>
@@ -326,56 +315,81 @@ export function ReviewView() {
 
 /* ---------------- Controls ---------------- */
 
+type Pending = { title: string; body: string; confirmLabel: string; apply: () => void } | null;
+
 export function ControlsView() {
-  const { settings: s, updateSettings, showToast } = useSeasons();
+  const { settings: s, updateSettings, showToast, addLog } = useSeasons();
+  const [pending, setPending] = useState<Pending>(null);
+
+  // Loosening a protection asks for confirmation; tightening applies straight away.
+  const change = (label: string, apply: () => void, loosens: boolean, title?: string, body?: string, confirmLabel?: string) => {
+    const run = () => { apply(); addLog('You', `Changed preference: ${label}.`); showToast(`Saved · ${label}`); setPending(null); };
+    if (loosens) setPending({ title: title ?? 'Are you sure?', body: body ?? '', confirmLabel: confirmLabel ?? 'Yes, change it', apply: run });
+    else run();
+  };
+
   return (
     <div className="grid-2">
       <div className="card card-pad">
-        <Heading size="small">Always on · can’t be turned off</Heading>
+        <Heading size="small">How Seasons protects you and your customers</Heading>
+        <Text size="small" color="surface.text.gray.muted">These are how Seasons works, every time.</Text>
         {[
-          ['Every customer message needs your approval', 'Seasons suggests; you approve; then it sends.'],
-          ['Money decisions are always yours', 'Loans, settlements and refunds are prefilled at most, never submitted.'],
-          ['Only customers who opted in', 'No WhatsApp opt-in, no message. Every message has STOP.'],
-          ['Benchmarks only from 50+ similar merchants', 'Aggregated numbers only. No single business can be identified.'],
+          ['You approve every customer message', 'Seasons drafts it and shows who gets it. It sends only after you approve.'],
+          ['Only customers who opted in hear from you', 'Each message carries a STOP option, and opt-outs are respected straight away.'],
+          ['Every step is recorded', 'Suggestions, approvals, edits and changes all appear in your Activity log.'],
         ].map(([t, d]) => (
           <div className="control" key={t}>
-            <div className="stack gap-4"><Text size="medium" weight="semibold">{t}</Text><Text size="small" color="surface.text.gray.muted">{d}</Text></div>
-            <span className="locked"><LockIcon size="xsmall" color="surface.icon.gray.muted" />Locked</span>
+            <div className="row gap-12" style={{ alignItems: 'flex-start' }}>
+              <span className="promise-icon"><CheckIcon size="small" color="feedback.icon.positive.intense" /></span>
+              <div className="stack gap-4"><Text size="medium" weight="semibold">{t}</Text><Text size="small" color="surface.text.gray.muted">{d}</Text></div>
+            </div>
           </div>
         ))}
       </div>
-      <div className="card card-pad">
+
+      <div className="card card-pad" data-tour="preferences">
         <Heading size="small">Your preferences</Heading>
+        <Text size="small" color="surface.text.gray.muted">Changes that loosen a protection ask you to confirm first.</Text>
         <div className="control">
-          <div className="stack gap-4"><Text size="medium" weight="semibold">Maximum discount Seasons may suggest</Text><Text size="small" color="surface.text.gray.muted">Offers above this are never drafted</Text></div>
-          <div className="seg">{[0, 10, 15, 20, 25].map((v) => <button key={v} className={s.discountCap === v ? 'on' : ''} onClick={() => updateSettings({ discountCap: v })}>{v === 0 ? 'None' : `${v}%`}</button>)}</div>
+          <div className="stack gap-4"><Text size="medium" weight="semibold">Maximum discount Seasons may suggest</Text><Text size="small" color="surface.text.gray.muted">Recommended: up to 20%</Text></div>
+          <div className="seg">{[0, 10, 15, 20, 25].map((v) => (
+            <button key={v} className={s.discountCap === v ? 'on' : ''} onClick={() => change(`maximum discount ${v === 0 ? 'none' : v + '%'}`, () => updateSettings({ discountCap: v }), v > 20,
+              `Allow discounts up to ${v}%?`, `Above 20%, discounts often cost more margin than the extra orders bring in. Seasons will still show the expected cost before you approve any offer.`, `Allow up to ${v}%`)}>{v === 0 ? 'None' : `${v}%`}</button>
+          ))}</div>
         </div>
         <div className="control">
-          <div className="stack gap-4"><Text size="medium" weight="semibold">Messages per customer per month</Text><Text size="small" color="surface.text.gray.muted">Across all Seasons messages</Text></div>
-          <div className="seg">{[1, 2, 3].map((v) => <button key={v} className={s.maxNudges === v ? 'on' : ''} onClick={() => updateSettings({ maxNudges: v })}>{v}</button>)}</div>
+          <div className="stack gap-4"><Text size="medium" weight="semibold">Messages per customer per month</Text><Text size="small" color="surface.text.gray.muted">Recommended: 2</Text></div>
+          <div className="seg">{[1, 2, 3].map((v) => (
+            <button key={v} className={s.maxNudges === v ? 'on' : ''} onClick={() => change(`up to ${v} message${v > 1 ? 's' : ''} per customer per month`, () => updateSettings({ maxNudges: v }), v > 2,
+              'Send up to 3 messages a month?', 'More messages can mean more opt-outs. Seasons will watch STOP replies and tell you if they rise.', 'Allow 3')}>{v}</button>
+          ))}</div>
         </div>
         <div className="control">
-          <div className="stack gap-4"><Text size="medium" weight="semibold">Quiet hours (9 PM – 9 AM)</Text><Text size="small" color="surface.text.gray.muted">No customer messages at night</Text></div>
-          <Switch accessibilityLabel="Quiet hours" isChecked={s.quietHours} onChange={({ isChecked }) => updateSettings({ quietHours: isChecked })} />
+          <div className="stack gap-4"><Text size="medium" weight="semibold">Quiet hours (9 PM – 9 AM)</Text><Text size="small" color="surface.text.gray.muted">Customers hear from you during the day</Text></div>
+          <Switch accessibilityLabel="Quiet hours" isChecked={s.quietHours} onChange={({ isChecked }) => change(isChecked ? 'quiet hours on' : 'quiet hours off', () => updateSettings({ quietHours: isChecked }), !isChecked,
+            'Turn off quiet hours?', 'Messages may then reach customers late at night or early in the morning.', 'Turn off')} />
         </div>
         <div className="control">
-          <div className="stack gap-4"><Text size="medium" weight="semibold">SMS if WhatsApp fails</Text><Text size="small" color="surface.text.gray.muted">Only for payment reminders, not offers</Text></div>
-          <Switch accessibilityLabel="SMS fallback" isChecked={s.smsFallback} onChange={({ isChecked }) => updateSettings({ smsFallback: isChecked })} />
+          <div className="stack gap-4"><Text size="medium" weight="semibold">SMS if WhatsApp doesn’t go through</Text><Text size="small" color="surface.text.gray.muted">For payment reminders only</Text></div>
+          <Switch accessibilityLabel="SMS fallback" isChecked={s.smsFallback} onChange={({ isChecked }) => change(isChecked ? 'SMS backup on' : 'SMS backup off', () => updateSettings({ smsFallback: isChecked }), false)} />
         </div>
         {(['week', 'month', 'year'] as Layer[]).map((l) => (
           <div className="control" key={l}>
             <div className="stack gap-4"><Text size="medium" weight="semibold">{layerName[l]} suggestions</Text></div>
-            <Switch accessibilityLabel={`${l} layer`} isChecked={s.layers[l]} onChange={({ isChecked }) => updateSettings({ layers: { ...s.layers, [l]: isChecked } })} />
+            <Switch accessibilityLabel={`${l} layer`} isChecked={s.layers[l]} onChange={({ isChecked }) => change(`${layerName[l].toLowerCase()} suggestions ${isChecked ? 'on' : 'off'}`, () => updateSettings({ layers: { ...s.layers, [l]: isChecked } }), false)} />
           </div>
         ))}
         <div className="control">
-          <div className="stack gap-4"><Text size="medium" weight="semibold">{s.paused ? 'Seasons is paused' : 'Pause Seasons'}</Text><Text size="small" color="surface.text.gray.muted">Stops all suggestions and cancels anything scheduled</Text></div>
+          <div className="stack gap-4"><Text size="medium" weight="semibold">{s.paused ? 'Seasons is paused' : 'Pause Seasons'}</Text><Text size="small" color="surface.text.gray.muted">{s.paused ? 'Resume whenever you’re ready' : 'Stops new suggestions and holds anything scheduled'}</Text></div>
           <Button size="small" variant="secondary" color={s.paused ? 'primary' : 'negative'} icon={s.paused ? PlayIcon : PauseIcon}
-            onClick={() => { updateSettings({ paused: !s.paused }); showToast(s.paused ? 'Seasons resumed' : 'Seasons paused. Nothing will be sent.'); }}>
+            onClick={() => change(s.paused ? 'Seasons resumed' : 'Seasons paused', () => updateSettings({ paused: !s.paused }), !s.paused,
+              'Pause Seasons?', 'Scheduled messages will be held, and you won’t get new suggestions until you resume.', 'Pause')}>
             {s.paused ? 'Resume' : 'Pause'}
           </Button>
         </div>
       </div>
+      <ConfirmDialog open={!!pending} title={pending?.title ?? ''} body={pending?.body ?? ''} confirmLabel={pending?.confirmLabel ?? ''}
+        onConfirm={() => pending?.apply()} onCancel={() => setPending(null)} />
     </div>
   );
 }

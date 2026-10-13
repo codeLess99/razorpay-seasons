@@ -6,9 +6,11 @@ import {
   SettingsIcon, CalendarIcon, SparklesIcon, CloseIcon, CheckCircleIcon, LockIcon, ClockIcon,
   ShoppingBagIcon, EducationIcon, AwardIcon, ThermometerIcon, MessageCircleIcon, ArrowRightIcon,
   InfoIcon, SearchIcon, BellIcon, HelpCircleIcon, TrendingUpIcon, HistoryIcon, SlidersIcon,
+  RazorpayIcon, SunIcon, PlayCircleIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon,
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
+import { products, runsOn, readiness, quickInsights, tourSteps } from './extras';
 
 /* ---------------- Shell ---------------- */
 
@@ -16,7 +18,7 @@ export function TopNav() {
   return (
     <header className="topnav">
       <div className="brand">
-        <span className="brand-mark"><RayIcon size="medium" color="surface.icon.staticWhite.normal" /></span>
+        <RazorpayIcon size="xlarge" color="surface.icon.primary.normal" />
         Razorpay
       </div>
       <nav className="topnav-tabs">
@@ -84,7 +86,7 @@ export function MerchantIcon({ m, size = 'medium' }: { m: Merchant; size?: 'smal
 }
 
 export function PageHeader() {
-  const { merchantId, setMerchantId, view, setView, pendingCount } = useSeasons();
+  const { merchantId, setMerchantId, view, setView, pendingCount, setTourStep } = useSeasons();
   const tabs: { id: View; label: string; Icon: typeof HomeIcon; count?: number }[] = [
     { id: 'overview', label: 'Overview', Icon: SparklesIcon },
     { id: 'year', label: 'Year', Icon: TrendingUpIcon, count: pendingCount('year') },
@@ -97,16 +99,19 @@ export function PageHeader() {
   return (
     <>
       <div className="page-head">
-        <div className="stack gap-4">
+        <div className="stack gap-4" data-tour="title">
           <div className="page-title">
+            <span className="seasons-logo"><SunIcon size="medium" color="surface.icon.staticWhite.normal" /></span>
             <Heading size="large">Seasons</Heading>
-            <Badge size="small" color="primary">Upgrade of Cashflow Forecaster</Badge>
           </div>
           <Text size="medium" color="surface.text.gray.muted">
-            Knows when your customers pay, across the year, month and week, and gets you ready before each moment. Nothing reaches a customer without your approval.
+            Diwali boxes, summer batches, Friday regulars: Seasons knows your rhythm and gets you ready before it hits.
           </Text>
         </div>
-        <span className="today-pill">Simulated date · {TODAY}</span>
+        <div className="row gap-8 wrap">
+          <span className="today-pill">Simulated date · {TODAY}</span>
+          <Button size="small" variant="secondary" icon={PlayCircleIcon} onClick={() => setTourStep(0)}>Take the tour</Button>
+        </div>
       </div>
       <div className="merchant-switch" role="tablist" aria-label="Demo merchant">
         {merchants.map((m) => (
@@ -187,8 +192,8 @@ export function ActionCard({ a }: { a: Action }) {
         <div className="action-foot">
           <span><b>Impact</b> · {a.impact}</span>
           <span><b>When</b> · {a.when}</span>
-          <span><b>Runs on</b> · {a.executesVia}</span>
         </div>
+        <RunsOn id={a.id} />
       </div>
       <div className="action-btns">
         {st === 'pending' && (
@@ -221,7 +226,7 @@ export function ActionList({ layer }: { layer: Layer }) {
   if (!settings.layers[layer]) return <div className="empty">The {layerName[layer]} layer is switched off in Controls.</div>;
   if (settings.paused) return <div className="empty">Seasons is paused. No new suggestions until you resume it in Controls.</div>;
   if (!list.length) return <div className="empty">Nothing to do in this layer right now. Seasons will tell you on WhatsApp when something comes up.</div>;
-  return <div className="stack gap-12">{list.map((a) => <ActionCard key={a.id} a={a} />)}</div>;
+  return <div className="stack gap-12">{list.map((a, i) => <div key={a.id} data-tour={i === 0 ? 'first-action' : undefined}><ActionCard a={a} /></div>)}</div>;
 }
 
 /* ---------------- WhatsApp phone ---------------- */
@@ -296,7 +301,7 @@ export function ApprovalDrawer() {
   return (
     <>
       <div className="scrim" onClick={() => openDrawer(null)} />
-      <aside className="drawer" role="dialog" aria-label="Review action">
+      <aside className="drawer" role="dialog" aria-label="Review action" data-tour="drawer">
         <div className="drawer-head">
           <div className="stack gap-4">
             <div className="row gap-8 wrap">
@@ -307,7 +312,8 @@ export function ApprovalDrawer() {
               <SourceBadge source={a.basis} />
             </div>
             <Heading size="medium">{a.title}</Heading>
-            <Text size="small" color="surface.text.gray.muted">{merchant.name} · {layerName[a.layer]} layer · runs on {a.executesVia}</Text>
+            <Text size="small" color="surface.text.gray.muted">{merchant.name} · {layerName[a.layer]} layer</Text>
+            <RunsOn id={a.id} compact />
           </div>
           <button className="icon-btn" aria-label="Close" onClick={() => openDrawer(null)}><CloseIcon size="large" color="surface.icon.gray.muted" /></button>
         </div>
@@ -394,7 +400,7 @@ export function ApprovalDrawer() {
                 <Text size="small" weight="semibold" color="surface.text.gray.muted">WHEN</Text>
                 <Text size="medium" weight="semibold">{a.when}</Text>
                 <Text size="small" weight="semibold" color="surface.text.gray.muted">RUNS ON</Text>
-                <Text size="medium">{a.executesVia}</Text>
+                <RunsOn id={a.id} compact />
                 <div className="row gap-8 mt-8"><LockIcon size="small" color="surface.icon.gray.muted" /><Text size="small" color="surface.text.gray.muted">Undo any time from this card or Controls.</Text></div>
               </div>
             )}
@@ -463,3 +469,184 @@ export function Toast() {
 }
 
 export { MessageCircleIcon };
+
+/* ---------------- Runs on (Razorpay products, with info) ---------------- */
+
+const statusLabel = { existing: 'Existing Razorpay product', seasons: 'New in Seasons', unverified: 'Suggested · not found in Razorpay’s dashboard or docs' };
+
+export function RunsOn({ id, compact }: { id: string; compact?: boolean }) {
+  const ids = runsOn[id] ?? [];
+  return (
+    <div className={`runs-on ${compact ? 'compact' : ''}`}>
+      {!compact && <span className="runs-label">Runs on</span>}
+      {ids.map((pid) => {
+        const p = products[pid];
+        return (
+          <span key={pid} className={`pchip ${p.status}`} tabIndex={0}>
+            {p.status === 'unverified' && <AlertTriangleIcon size="xsmall" color="currentColor" />}
+            {p.name}
+            <InfoIcon size="xsmall" color="currentColor" />
+            <span className="pop" role="tooltip">
+              <span className={`pop-tag ${p.status}`}>{statusLabel[p.status]}</span>
+              <span className="pop-title">{p.name}</span>
+              <span className="pop-text">{p.text}</span>
+            </span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- Quick insights carousel ---------------- */
+
+export function QuickInsights() {
+  const { merchant, setView, status } = useSeasons();
+  const base = quickInsights[merchant.id] ?? [];
+  const approved = merchant.actions.filter((a) => status[a.id]?.state === 'approved');
+  const slides = approved.length
+    ? [{ tag: 'Done' as const, title: `You approved ${approved.length} action${approved.length > 1 ? 's' : ''} today`, text: approved.map((a) => a.title).slice(0, 2).join(' · ') + (approved.length > 2 ? ' …' : ''), go: undefined }, ...base]
+    : base;
+  const [i, setI] = useState(0);
+  const [hover, setHover] = useState(false);
+  useEffect(() => { setI(0); }, [merchant.id, approved.length]);
+  useEffect(() => {
+    if (hover || slides.length < 2) return;
+    const t = window.setInterval(() => setI((x) => (x + 1) % slides.length), 5000);
+    return () => window.clearInterval(t);
+  }, [hover, slides.length]);
+  if (!slides.length) return null;
+  const s = slides[Math.min(i, slides.length - 1)];
+  const tagColor = { Done: 'positive', 'You could': 'primary', 'Heads-up': 'notice', Pattern: 'information' } as const;
+  return (
+    <div className="card qi" data-tour="insights" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <div className="qi-head">
+        <span className="layer-tag"><SparklesIcon size="small" color="surface.icon.primary.normal" />Quick insights</span>
+        <div className="row gap-4">
+          <button className="icon-btn" aria-label="Previous insight" onClick={() => setI((x) => (x - 1 + slides.length) % slides.length)}><ChevronLeftIcon size="small" color="surface.icon.gray.muted" /></button>
+          <button className="icon-btn" aria-label="Next insight" onClick={() => setI((x) => (x + 1) % slides.length)}><ChevronRightIcon size="small" color="surface.icon.gray.muted" /></button>
+        </div>
+      </div>
+      <div className="qi-slide" key={s.title}>
+        <Badge size="small" color={tagColor[s.tag]}>{s.tag}</Badge>
+        <div className="qi-title">{s.title}</div>
+        <Text size="small" color="surface.text.gray.subtle">{s.text}</Text>
+        {s.go && <button className="qi-link" onClick={() => setView(s.go!)}>Open <ArrowRightIcon size="xsmall" color="currentColor" /></button>}
+      </div>
+      <div className="qi-dots">
+        {slides.map((x, k) => <button key={x.title} aria-label={`Slide ${k + 1}`} className={`qi-dot ${k === i ? 'on' : ''}`} onClick={() => setI(k)} />)}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Data readiness ---------------- */
+
+export function ReadinessPanel() {
+  const { merchant } = useSeasons();
+  const r = readiness[merchant.id];
+  const predictive = r.mode === 'predictive';
+  return (
+    <div className={`card card-pad readiness ${predictive ? 'predictive' : ''}`} data-tour="readiness">
+      <div className="row between wrap gap-8">
+        <div className="stack gap-4">
+          <div className="row gap-8">
+            <Badge size="small" color={predictive ? 'information' : 'positive'}>{predictive ? 'Predictive mode' : 'Your own data'}</Badge>
+            <Text size="small" color="surface.text.gray.muted">Seasons checked your account: {r.found}</Text>
+          </div>
+          {predictive && (
+            <Text size="medium" weight="semibold">New on Razorpay? Seasons starts predicting from day one, and switches to your own patterns as they appear.</Text>
+          )}
+        </div>
+      </div>
+      <div className="ready-rows">
+        {r.rows.map((row) => (
+          <div className="ready-row" key={row.layer}>
+            <Text size="small" weight="semibold">{layerName[row.layer]}</Text>
+            <div className="bar"><span style={{ width: `${Math.max(4, Math.round(row.pct * 100))}%` }} className={row.pct >= 1 ? 'full' : ''} /></div>
+            <div className="stack">
+              <Text size="small" color="surface.text.gray.subtle">{row.status}</Text>
+              {row.until && <Text size="xsmall" color="surface.text.gray.muted">{row.until}</Text>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="row gap-8 mt-12">
+        <InfoIcon size="small" color="surface.icon.gray.muted" />
+        <Text size="xsmall" color="surface.text.gray.muted">
+          Predictions use combined numbers from at least 50 similar merchants, so no single business can be identified. Needs about 8 weeks for weekly patterns, 3 cycles for monthly, and one full year for annual.
+        </Text>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Confirm dialog ---------------- */
+
+export function ConfirmDialog({ open, title, body, confirmLabel, onConfirm, onCancel }:
+  { open: boolean; title: string; body: string; confirmLabel: string; onConfirm: () => void; onCancel: () => void }) {
+  if (!open) return null;
+  return (
+    <div className="modal-wrap" onClick={onCancel}>
+      <div className="confirm" role="alertdialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="row gap-8"><AlertTriangleIcon size="medium" color="feedback.icon.notice.intense" /><Heading size="small">{title}</Heading></div>
+        <Text size="medium" color="surface.text.gray.subtle">{body}</Text>
+        <div className="row gap-8" style={{ justifyContent: 'flex-end' }}>
+          <Button variant="tertiary" onClick={onCancel}>Keep as it is</Button>
+          <Button onClick={onConfirm}>{confirmLabel}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Guided tour ---------------- */
+
+export function Tour() {
+  const { tourStep, setTourStep, setMerchantId, setView, openDrawer } = useSeasons();
+  useEffect(() => {
+    document.querySelectorAll('.tour-focus').forEach((el) => el.classList.remove('tour-focus'));
+    if (tourStep === null) return;
+    const st = tourSteps[tourStep];
+    setMerchantId(st.merchant);
+    setView(st.view);
+    const t1 = window.setTimeout(() => {
+      if (st.drawer) {
+        const m = merchants.find((x) => x.id === st.merchant)!;
+        openDrawer(m.actions.find((a) => a.id === st.drawer) ?? null);
+      }
+    }, 60);
+    const t2 = window.setTimeout(() => {
+      const el = document.querySelector(`[data-tour="${st.target}"]`);
+      if (el) {
+        el.classList.add('tour-focus');
+        if (st.target !== 'drawer') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 260);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, [tourStep]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (tourStep === null) return null;
+  const st = tourSteps[tourStep];
+  const last = tourStep === tourSteps.length - 1;
+  const end = () => { openDrawer(null); setTourStep(null); setMerchantId('mithas'); setView('overview'); };
+  const go = (n: number) => { if (st.drawer) openDrawer(null); setTourStep(n); };
+  return (
+    <div className={`tour-card ${st.drawer ? 'left' : ''}`} role="dialog" aria-label="Product tour">
+      <div className="row between">
+        <Text size="xsmall" weight="semibold" color="surface.text.primary.normal">STEP {tourStep + 1} OF {tourSteps.length}</Text>
+        <button className="icon-btn" aria-label="Close tour" onClick={end}><CloseIcon size="small" color="surface.icon.gray.muted" /></button>
+      </div>
+      <Heading size="small">{st.title}</Heading>
+      <Text size="small" color="surface.text.gray.subtle">{st.body}</Text>
+      <div className="tour-progress"><span style={{ width: `${((tourStep + 1) / tourSteps.length) * 100}%` }} /></div>
+      <div className="row between">
+        <Button size="small" variant="tertiary" onClick={end}>Skip tour</Button>
+        <div className="row gap-8">
+          {tourStep > 0 && <Button size="small" variant="secondary" onClick={() => go(tourStep - 1)}>Back</Button>}
+          <Button size="small" onClick={() => (last ? end() : go(tourStep + 1))}>{last ? 'Finish' : 'Next'}</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
