@@ -34,9 +34,11 @@ export default async function handler(req: Req, res: Res) {
 
   // One at a time: Razorpay can reject bursts of simultaneous requests.
   const results: { name: string; ok: boolean; id?: string; url?: string; status?: string; error?: string }[] = [];
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   for (const [i, name] of names.entries()) results.push(await (async () => {
     try {
-      const r = await fetch('https://api.razorpay.com/v1/payment_links', {
+      if (i > 0) await wait(300);
+      const send = () => fetch('https://api.razorpay.com/v1/payment_links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: auth },
         body: JSON.stringify({
@@ -50,6 +52,8 @@ export default async function handler(req: Req, res: Res) {
           notes: { source: 'Razorpay Seasons prototype (test mode)', merchant },
         }),
       });
+      let r = await send();
+      if (r.status === 429) { await wait(1200); r = await send(); }
       const d = await r.json().catch(() => ({}));
       if (!r.ok) return { name, ok: false, error: d?.error?.description ?? `razorpay-${r.status}` };
       return { name, ok: true, id: d.id, url: d.short_url, status: d.status };
