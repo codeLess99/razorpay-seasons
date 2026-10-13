@@ -5,15 +5,15 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons } from './state';
 import { Merchant, formatINR } from './data';
-import { readinessPlans, playbook, Plan } from './extras';
+import { readinessPlans, playbook, Plan, plansFor } from './extras';
 
 /* ---------------- Readiness score helpers ---------------- */
 
-export function usePlanProgress(m: Merchant) {
+export function usePlanProgress(m: Merchant, layer?: 'year' | 'month' | 'week') {
   const { status, confirmed } = useSeasons();
-  const plan = readinessPlans[m.id];
+  const plan = layer ? plansFor(m.id)[layer] : readinessPlans[m.id];
   const isDone = (it: Plan['items'][number]) =>
-    it.kind === 'auto' ? true : it.kind === 'action' ? status[it.actionId!]?.state === 'approved' : !!confirmed[`${m.id}:${it.id}`];
+    it.kind === 'auto' ? true : it.kind === 'action' ? status[it.actionId!]?.state === 'approved' : !!confirmed[`${m.id}:${plan.layer}:${it.id}`];
   const done = plan.items.filter(isDone).length;
   return { plan, isDone, done, total: plan.items.length };
 }
@@ -71,9 +71,9 @@ export function PlaybookTag({ m }: { m: Merchant }) {
 
 /* ---------------- Readiness plan ---------------- */
 
-export function ReadinessPlan({ m }: { m: Merchant }) {
+export function ReadinessPlan({ m, layer }: { m: Merchant; layer: 'year' | 'month' | 'week' }) {
   const { openDrawer, toggleConfirm, setView } = useSeasons();
-  const { plan, isDone, done, total } = usePlanProgress(m);
+  const { plan, isDone, done, total } = usePlanProgress(m, layer);
   const next = plan.items.find((it) => !isDone(it));
   const [all, setAll] = useState(false);
   const pending = plan.items.filter((it) => !isDone(it));
@@ -114,7 +114,7 @@ export function ReadinessPlan({ m }: { m: Merchant }) {
                 {it.kind === 'auto' && <span className="rby">Done by Seasons</span>}
                 {it.kind === 'action' && !d && act && <Button size="xsmall" variant="secondary" onClick={() => { setView(act.layer); openDrawer(act); }}>Review</Button>}
                 {it.kind === 'action' && d && <span className="rby">Approved</span>}
-                {it.kind === 'confirm' && <Button size="xsmall" variant={d ? 'tertiary' : 'secondary'} onClick={() => toggleConfirm(`${m.id}:${it.id}`, it.label)}>{d ? 'Undo' : 'Confirm'}</Button>}
+                {it.kind === 'confirm' && <Button size="xsmall" variant={d ? 'tertiary' : 'secondary'} onClick={() => toggleConfirm(`${m.id}:${plan.layer}:${it.id}`, it.label)}>{d ? 'Undo' : 'Confirm'}</Button>}
               </span>
             </div>
           );

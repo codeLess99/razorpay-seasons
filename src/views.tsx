@@ -8,7 +8,6 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons } from './state';
 import { DAYS, BLOCKS, Layer, formatINR } from './data';
-import { readinessPlans } from './extras';
 import { ActionList, Facts, Insight, RayWhatsApp, layerName, QuickInsights, ReadinessPanel, ConfirmDialog } from './components';
 import { aiLessons } from './ai';
 import { YearStrip, PlaybookTag, Ring, usePlanProgress, ReadinessPlan, MiniWeek, MiniMonth, MiniYear, HowFlow, shortFact } from './visuals';
@@ -123,7 +122,7 @@ export function YearView() {
   return (
     <div className="stack gap-16">
       <Insight>{m.annual.insight}</Insight>
-      {readinessPlans[m.id].layer === 'year' && <ReadinessPlan m={m} />}
+      <ReadinessPlan m={m} layer="year" />
       <div className="card chart-card" data-tour="year-chart">
         <div className="row between wrap gap-8">
           <div className="stack gap-4">
@@ -173,7 +172,7 @@ export function MonthView() {
         <div className="arrow"><ArrowRightIcon size="medium" color="surface.icon.gray.muted" /></div>
         <div className="side new"><Text size="small" weight="semibold" color="surface.text.primary.normal">WITH SEASONS</Text><Text size="medium" weight="semibold">{m.monthly.proposed}</Text></div>
       </div>
-      {readinessPlans[m.id].layer === 'month' && <ReadinessPlan m={m} />}
+      <ReadinessPlan m={m} layer="month" />
       <div className="grid-2">
         <div className="card chart-card">
           <Heading size="small">When customers pay (share of payments by day)</Heading>
@@ -219,6 +218,7 @@ export function WeekView() {
   return (
     <div className="stack gap-16">
       <Insight>{m.weekly.insight}</Insight>
+      <ReadinessPlan m={m} layer="week" />
       <div className="grid-2">
         <div className="card card-pad" data-tour="week-heat">
           <div className="row between"><Heading size="small">Your week</Heading><Badge size="small" color={m.sources.week.source === 'early' ? 'notice' : 'positive'}>{m.sources.week.source === 'early' ? 'Early signal · 3 weeks' : 'Your own data'}</Badge></div>

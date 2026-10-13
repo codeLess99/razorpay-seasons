@@ -142,7 +142,7 @@ export const tourSteps: TourStep[] = [
   { merchant: 'mithas', view: 'overview', target: 'hero', title: 'Your next moment, at a glance', body: 'The countdown to your next peak, your year with peak months in orange and “Today” marked, and how many readiness tasks are done. The playbook tag shows which template this business uses.' },
   { merchant: 'mithas', view: 'overview', target: 'whatsapp', title: 'It comes to you', body: 'You don’t need to go looking. When a moment is coming up, RAY sends a short WhatsApp summary with a link to the plan.' },
   { merchant: 'mithas', view: 'overview', target: 'insights', title: 'Quick insights', body: 'A rotating tile: what Seasons did for you and what you could do next. Use the arrows or dots, or tap “Open” to jump there.' },
-  { merchant: 'mithas', view: 'year', target: 'readiness-plan', title: 'Am I ready?', body: 'A dated checklist counted back from the rush. Tasks tick themselves when you approve a suggestion. Dashed ones (stock, supplier, courier) only you can confirm, because Razorpay can’t see them.' },
+  { merchant: 'mithas', view: 'year', target: 'readiness-plan', title: 'Am I ready?', body: 'A dated checklist counted back from the rush. Every tab has one: the season, this month’s cycle and the week ahead. Tasks tick themselves when you approve a suggestion; dashed ones (stock, supplier, courier) only you can confirm, because Razorpay can’t see them.' },
   { merchant: 'mithas', view: 'year', target: 'year-chart', title: 'It finds your season', body: 'Oct–Dec brings 61% of this merchant’s year. Diwali moves to 8 Nov, so Seasons shifts the forecast and shows it as a range, not a single number.' },
   { merchant: 'mithas', view: 'year', target: 'first-action', title: 'Every suggestion shows its evidence', body: 'Why, expected impact, confidence, timing, and the Razorpay product it runs on. Hover ⓘ: blue = existing Razorpay product, orange = suggested but not found in Razorpay’s docs, purple = new in Seasons.' },
   { merchant: 'mithas', view: 'year', target: 'drawer', drawer: 'm-winback', title: 'You approve, then it acts', body: 'See who gets it (no opt-in, no message), edit it, switch it to हिंदी with Gemini, and preview it. On approval Seasons creates real Payment Links in Razorpay test mode. Nothing is sent.' },
@@ -182,9 +182,9 @@ export const playbook: Record<string, string> = {
    kind: auto = Seasons did it · action = done when you approve that suggestion · confirm = only you can confirm it
 ------------------------------------------------------------------- */
 export interface PlanItem { id: string; date: string; label: string; kind: 'auto' | 'action' | 'confirm'; actionId?: string; note?: string }
-export interface Plan { layer: 'year' | 'month'; title: string; goal: string; goalDate: string; items: PlanItem[] }
+export interface Plan { layer: 'year' | 'month' | 'week'; title: string; goal: string; goalDate: string; items: PlanItem[] }
 
-export const readinessPlans: Record<string, Plan> = {
+const mainPlans: Record<string, Plan> = {
   mithas: {
     layer: 'year', title: 'Diwali readiness', goal: 'Rush begins', goalDate: '18 Oct',
     items: [
@@ -231,3 +231,63 @@ export const readinessPlans: Record<string, Plan> = {
     ],
   },
 };
+
+const extraPlans: Record<string, Partial<Record<'year' | 'month' | 'week', Plan>>> = {
+  mithas: {
+    month: { layer: 'month', title: 'October salary-week readiness', goal: 'Salary week', goalDate: '1 Oct', items: [
+      { id: 'p', date: '7 Sep', label: 'Salary-week buying pattern found', kind: 'auto' },
+      { id: 'pick', date: '25 Sep', label: 'Choose this month’s featured box', kind: 'confirm', note: 'Your menu isn’t in Razorpay' },
+      { id: 'msg', date: '1 Oct', label: 'Salary-week message to past buyers', kind: 'action', actionId: 'm-salary' },
+    ] },
+    week: { layer: 'week', title: 'This weekend’s readiness', goal: 'Sunday peak', goalDate: 'Sun 13 Sep', items: [
+      { id: 'p', date: '7 Sep', label: 'Weekly pattern found (Sun 6–9 PM)', kind: 'auto' },
+      { id: 'time', date: '12 Sep', label: 'Send messages Saturday 7 PM', kind: 'action', actionId: 'm-weekend' },
+      { id: 'pack', date: '12 Sep', label: 'Weekend orders packed by Saturday', kind: 'confirm', note: 'Only you can confirm this' },
+    ] },
+  },
+  kata: {
+    year: { layer: 'year', title: 'January batch readiness', goal: 'New batch', goalDate: '4 Jan', items: [
+      { id: 'p', date: '7 Sep', label: 'January enrolment wave found (+38%)', kind: 'auto' },
+      { id: 'coach', date: '30 Nov', label: 'Coach availability for January', kind: 'confirm', note: 'Only you can confirm this' },
+      { id: 'ref', date: '14 Dec', label: 'Referral message to current families', kind: 'action', actionId: 'k-winter' },
+    ] },
+    week: { layer: 'week', title: 'This Saturday’s readiness', goal: 'Trial classes', goalDate: 'Sat 12 Sep', items: [
+      { id: 'p', date: '7 Sep', label: 'Saturday 9–12 trial peak found', kind: 'auto' },
+      { id: 'slots', date: '10 Sep', label: 'Open two more trial slots', kind: 'action', actionId: 'k-trial' },
+      { id: 'inst', date: '11 Sep', label: 'Instructor for the extra slots', kind: 'confirm', note: 'Only you can confirm this' },
+    ] },
+  },
+  courtside: {
+    month: { layer: 'month', title: 'October dues readiness', goal: 'Dues window', goalDate: '1–10 Oct', items: [
+      { id: 'p', date: '7 Sep', label: 'Members grouped by when they pay', kind: 'auto' },
+      { id: 'fee', date: '25 Sep', label: 'Confirm October fee (₹2,500)', kind: 'confirm', note: 'Fee changes live outside Razorpay' },
+      { id: 'dues', date: '1 Oct', label: 'Dues link on WhatsApp, 8 PM', kind: 'action', actionId: 'c-dues' },
+    ] },
+    week: { layer: 'week', title: 'Week-ahead readiness', goal: 'Tuesday evening', goalDate: 'Tue 15 Sep', items: [
+      { id: 'p', date: '7 Sep', label: 'Quiet regulars and empty slots found', kind: 'auto' },
+      { id: 'reg', date: '10 Sep', label: 'Check in with 6 Friday regulars', kind: 'action', actionId: 'c-regulars' },
+      { id: 'coach', date: '11 Sep', label: 'Friday coach confirmed', kind: 'confirm', note: 'Only you can confirm this' },
+      { id: 'tue', date: '14 Sep', label: 'Tuesday members’ offer', kind: 'action', actionId: 'c-tuesday' },
+    ] },
+  },
+  thanda: {
+    month: { layer: 'month', title: 'Salary-week readiness (predicted)', goal: 'Salary week', goalDate: '1 Oct', items: [
+      { id: 'p', date: '7 Sep', label: 'Salary-week pattern from similar merchants', kind: 'auto' },
+      { id: 'emi', date: '25 Sep', label: 'EMI options on before salary week', kind: 'action', actionId: 't-emi' },
+      { id: 'store', date: '30 Sep', label: 'EMI offer shown in the showroom', kind: 'confirm', note: 'Only you can confirm this' },
+    ] },
+    week: { layer: 'week', title: 'This Saturday’s readiness', goal: 'Saturday rush', goalDate: 'Sat 12 Sep', items: [
+      { id: 'p', date: '7 Sep', label: 'Early signal: Saturday 12–6 PM busiest', kind: 'auto' },
+      { id: 'visit', date: '11 Sep', label: 'Invite deposit holders', kind: 'action', actionId: 't-weekend' },
+      { id: 'staff', date: '12 Sep', label: 'Extra staff for Saturday afternoon', kind: 'confirm', note: 'Only you can confirm this' },
+    ] },
+  },
+};
+
+// Every merchant gets a readiness check on every tab. `main` is the plan for their next big moment (shown in the banner).
+export const readinessPlans: Record<string, Plan> = mainPlans;
+export const plansFor = (merchantId: string): Record<'year' | 'month' | 'week', Plan> => {
+  const main = mainPlans[merchantId];
+  return { ...extraPlans[merchantId], [main.layer]: main } as Record<'year' | 'month' | 'week', Plan>;
+};
+

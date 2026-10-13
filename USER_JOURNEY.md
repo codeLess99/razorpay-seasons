@@ -13,4 +13,6 @@ Simulated date in the prototype: Mon, 7 Sep 2026. Main merchant: Mithas Foods (D
 9. **Controls.** Seasons' commitments (merchant approves every customer message; only opted-in customers; every step logged) plus the merchant's preferences: discount limit, messages per month, quiet hours, SMS backup, which layers run, and pause. Loosening a protection asks for confirmation.
 10. **Activity log.** Every suggestion, approval, edit and change, with who did it.
 
+Every tab (Year, Month, Week) opens with its own **Am I ready?** check for that horizon: the season, this month's cycle, and the week ahead.
+
 Use **Take the tour** in the app for a guided version of this journey.
