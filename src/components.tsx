@@ -10,7 +10,7 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
-import { products, runsOn, readiness, quickInsights, tourSteps, linkAmount } from './extras';
+import { products, runsOn, readiness, quickInsights, tourSteps, linkAmount, waCategory, waExampleRate } from './extras';
 import { createTestLinks } from './razorpay';
 import { aiRewrite, RewriteMode } from './ai';
 
@@ -315,10 +315,13 @@ export function ApprovalDrawer() {
   const excluded = a.recipients?.filter((r) => !r.optedIn) ?? [];
   const totalNote = a.id === 'm-winback' ? ` (showing 8 of 86 · ${chosen === 6 ? 64 : chosen} will receive it)` : '';
   const isMsg = a.kind === 'message';
+  const sendCount = a.id === 'm-winback' && chosen === 6 ? 64 : a.id === 'k-timing' && chosen === 5 ? 108 : chosen;
+  const cat = waCategory[a.id];
+  const cost = cat ? sendCount * waExampleRate[cat] : 0;
 
   const doApprove = async () => {
     if (isMsg) {
-      const n = a.id === 'm-winback' && chosen === 6 ? 64 : a.id === 'k-timing' && chosen === 5 ? 108 : chosen;
+      const n = sendCount;
       const note = `${a.when} · ${n} recipient${n === 1 ? '' : 's'}`;
       const detail = `${n} recipients, message ${msg === a.message ? 'as drafted' : 'edited by you'}${lang !== 'en' ? ` (${lang === 'hindi' ? 'Hindi' : 'Hinglish'})` : ''}.`;
       const la = linkAmount[a.id];
@@ -387,6 +390,12 @@ export function ApprovalDrawer() {
                   ))}
                 </div>
                 {excluded.length > 0 && <Text size="small" color="surface.text.gray.muted">Customers without WhatsApp opt-in are never messaged. You can’t override this.</Text>}
+                {cat && (
+                  <div className="wa-cost">
+                    <div><b>WhatsApp cost</b> · {sendCount} {cat} message{sendCount === 1 ? '' : 's'} · about ₹{cost < 10 ? cost.toFixed(2).replace(/\.00$/, '') : Math.round(cost).toLocaleString('en-IN')}</div>
+                    <span>{cat === 'marketing' ? 'Offers and reminders to come back are marketing, the costlier kind.' : 'Payment reminders for something already due are utility, the cheaper kind.'} Charged by your WhatsApp provider, not Razorpay. Example rate ₹{waExampleRate[cat]}/message; your provider’s rate may differ.</span>
+                  </div>
+                )}
               </div>
             )}
 

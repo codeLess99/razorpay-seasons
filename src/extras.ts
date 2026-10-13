@@ -145,7 +145,7 @@ export const tourSteps: TourStep[] = [
   { merchant: 'mithas', view: 'year', target: 'readiness-plan', title: 'Am I ready?', body: 'A dated checklist counted back from the rush. Every tab has one: the season, this month’s cycle and the week ahead. Tasks tick themselves when you approve a suggestion; dashed ones (stock, supplier, courier) only you can confirm, because Razorpay can’t see them.' },
   { merchant: 'mithas', view: 'year', target: 'year-chart', title: 'It finds your season', body: 'Oct–Dec brings 61% of this merchant’s year. Diwali moves to 8 Nov, so Seasons shifts the forecast and shows it as a range, not a single number.' },
   { merchant: 'mithas', view: 'year', target: 'first-action', title: 'Every suggestion shows its evidence', body: 'Why, expected impact, confidence, timing, and the Razorpay product it runs on. Hover ⓘ: blue = existing Razorpay product, orange = suggested but not found in Razorpay’s docs, purple = new in Seasons.' },
-  { merchant: 'mithas', view: 'year', target: 'recipients', drawer: 'm-winback', title: 'Who gets it', body: 'Before anything goes out, you see exactly who receives it. Customers without WhatsApp opt-in are greyed out with the reason, and you can’t override that. Untick anyone you’d rather leave out.' },
+  { merchant: 'mithas', view: 'year', target: 'recipients', drawer: 'm-winback', title: 'Who gets it', body: 'Before anything goes out, you see exactly who receives it. Customers without WhatsApp opt-in are greyed out with the reason, and you can’t override that. Untick anyone you’d rather leave out. Below the list, the WhatsApp cost of this send is shown before you approve.' },
   { merchant: 'mithas', view: 'year', target: 'message', drawer: 'm-winback', title: 'The message: edit, translate, preview', body: 'Edit the text, switch it to हिंदी or Hinglish (live, via Gemini), or make it shorter. The phone on the right shows exactly what the customer sees. Approve & schedule then creates real Payment Links in Razorpay test mode. Nothing is sent.' },
   { merchant: 'kata', view: 'month', target: 'readiness-plan', title: 'Monthly: ask at the right time', body: 'For a course seller: fee links go out when each family usually pays, links stay open past the deadline so late payers aren’t cut off, and reliable families are offered AutoPay.' },
   { merchant: 'courtside', view: 'week', target: 'week-heat', title: 'Weekly: regulars and quiet slots', body: 'For a club: regulars who have gone quiet, evenings that run empty, and the best time to message. Every nudge waits for approval.' },
@@ -292,3 +292,14 @@ export const plansFor = (merchantId: string): Record<'year' | 'month' | 'week', 
   return { ...extraPlans[merchantId], [main.layer]: main } as Record<'year' | 'month' | 'week', Plan>;
 };
 
+
+/* ---------- WhatsApp cost shown before approval ----------
+   Meta charges per message by category; the merchant pays via their WhatsApp provider, not Razorpay.
+   Rates vary by provider, so these are clearly labelled example rates, not quotes. */
+export const waCategory: Record<string, 'marketing' | 'utility'> = {
+  'm-winback': 'marketing', 'm-salary': 'marketing',
+  'k-timing': 'utility', 'k-autopay': 'marketing', 'k-winter': 'marketing',
+  'c-regulars': 'marketing', 'c-tuesday': 'marketing', 'c-dues': 'utility', 'c-season': 'marketing',
+  't-weekend': 'marketing',
+};
+export const waExampleRate = { marketing: 1, utility: 0.15 };
