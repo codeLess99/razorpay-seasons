@@ -38,6 +38,7 @@ export const runsOn: Record<string, string[]> = {
   'm-weekend': ['seasons-timing'],
   'k-timing': ['payment-links-batch', 'whatsapp', 'seasons-timing'],
   'k-hold': ['seasons-approval'],
+  'k-expiry': ['payment-links-batch'],
   'k-autopay': ['upi-autopay'],
   'k-winter': ['payment-pages', 'whatsapp'],
   'k-trial': ['payment-pages', 'slot-booking'],
@@ -137,16 +138,96 @@ export interface TourStep {
   drawer?: string; // action id to open
 }
 export const tourSteps: TourStep[] = [
-  { merchant: 'mithas', view: 'overview', target: 'title', title: 'Meet Seasons', body: 'Seasons lives inside your Razorpay dashboard. It learns when your customers pay, across the year, month and week, and gets you ready before each moment.' },
-  { merchant: 'mithas', view: 'overview', target: 'whatsapp', title: 'It comes to you', body: 'You don’t need to go looking. When a moment is coming up, RAY sends you a short WhatsApp summary with a link to the plan.' },
-  { merchant: 'mithas', view: 'overview', target: 'insights', title: 'Quick insights', body: 'A rotating tile with what Seasons did for you and what you could do next. Tap any slide to jump to it.' },
-  { merchant: 'mithas', view: 'overview', target: 'readiness', title: 'What Seasons is using', body: 'Each layer shows whether it’s using your own payments or, if you’re new, predictions from similar merchants.' },
-  { merchant: 'mithas', view: 'year', target: 'year-chart', title: 'It finds your season', body: 'Mithas Foods earns 61% of its year in Oct–Dec. Diwali moves to 8 Nov this year, so Seasons shifts the forecast, not a fixed calendar.' },
-  { merchant: 'mithas', view: 'year', target: 'first-action', title: 'A plan, 6 weeks ahead', body: 'Each suggestion shows why, the expected impact, how confident Seasons is, and which Razorpay product it runs on. Tap ⓘ to see what each product is.' },
-  { merchant: 'mithas', view: 'year', target: 'drawer', drawer: 'm-winback', title: 'You approve, then it acts', body: 'See exactly who gets the message (customers without opt-in are left out), edit the text, and preview it on WhatsApp. Nothing is sent until you approve.' },
-  { merchant: 'kata', view: 'month', target: 'month-groups', title: 'Monthly: ask at the right time', body: 'For a course seller, fee links go out when each family usually pays (right after salary day for most), on WhatsApp instead of SMS.' },
-  { merchant: 'courtside', view: 'week', target: 'week-heat', title: 'Weekly: your regulars and your quiet slots', body: 'For a club, Seasons spots regulars who have gone quiet and evenings that run empty, then drafts a personal note or an offer for you to approve.' },
-  { merchant: 'thanda', view: 'overview', target: 'readiness', title: 'New on Razorpay? Predictions from day one', body: 'With only 3 weeks of data, Seasons predicts from 240 similar merchants. Each layer switches to your own data as soon as there’s enough.' },
-  { merchant: 'mithas', view: 'review', target: 'feedback', title: 'It learns after every season', body: 'Seasons compares forecast with what happened, then asks you what it couldn’t see. Your notes turn into changes for the next plan, and you choose which to keep.' },
-  { merchant: 'mithas', view: 'controls', target: 'preferences', title: 'You stay in charge', body: 'Set your discount limit, quiet hours and message cap, switch layers on or off, or pause Seasons any time. Loosening a protection always asks you to confirm.' },
+  { merchant: 'mithas', view: 'overview', target: 'title', title: 'Meet Seasons', body: 'Seasons lives inside your Razorpay dashboard. It learns when your customers pay (across the year, month and week) and gets you ready before each moment. Four demo merchants show four kinds of business.' },
+  { merchant: 'mithas', view: 'overview', target: 'hero', title: 'Your next moment, at a glance', body: 'The countdown to your next peak, your year with peak months in orange and “Today” marked, and how many readiness tasks are done. The playbook tag shows which template this business uses.' },
+  { merchant: 'mithas', view: 'overview', target: 'whatsapp', title: 'It comes to you', body: 'You don’t need to go looking. When a moment is coming up, RAY sends a short WhatsApp summary with a link to the plan.' },
+  { merchant: 'mithas', view: 'overview', target: 'insights', title: 'Quick insights', body: 'A rotating tile: what Seasons did for you and what you could do next. Use the arrows or dots, or tap “Open” to jump there.' },
+  { merchant: 'mithas', view: 'year', target: 'readiness-plan', title: 'Am I ready?', body: 'A dated checklist counted back from the rush. Tasks tick themselves when you approve a suggestion. Dashed ones (stock, supplier, courier) only you can confirm, because Razorpay can’t see them.' },
+  { merchant: 'mithas', view: 'year', target: 'year-chart', title: 'It finds your season', body: 'Oct–Dec brings 61% of this merchant’s year. Diwali moves to 8 Nov, so Seasons shifts the forecast and shows it as a range, not a single number.' },
+  { merchant: 'mithas', view: 'year', target: 'first-action', title: 'Every suggestion shows its evidence', body: 'Why, expected impact, confidence, timing, and the Razorpay product it runs on. Hover ⓘ: blue = existing Razorpay product, orange = suggested but not found in Razorpay’s docs, purple = new in Seasons.' },
+  { merchant: 'mithas', view: 'year', target: 'drawer', drawer: 'm-winback', title: 'You approve, then it acts', body: 'See who gets it (no opt-in, no message), edit it, switch it to हिंदी with Gemini, and preview it. On approval Seasons creates real Payment Links in Razorpay test mode. Nothing is sent.' },
+  { merchant: 'kata', view: 'month', target: 'readiness-plan', title: 'Monthly: ask at the right time', body: 'For a course seller: fee links go out when each family usually pays, links stay open past the deadline so late payers aren’t cut off, and reliable families are offered AutoPay.' },
+  { merchant: 'courtside', view: 'week', target: 'week-heat', title: 'Weekly: regulars and quiet slots', body: 'For a club: regulars who have gone quiet, evenings that run empty, and the best time to message. Every nudge waits for approval.' },
+  { merchant: 'thanda', view: 'overview', target: 'readiness', title: 'New on Razorpay? Predictions from day one', body: 'With 3 weeks of data, Seasons predicts from similar merchants (ranges from 50+ businesses, never names) and shows when each layer switches to your own data.' },
+  { merchant: 'mithas', view: 'review', target: 'feedback', title: 'It learns after every season', body: 'Seasons compares forecast with what happened, then asks what it couldn’t see. Type a note (or use the example) and Gemini turns it into changes for the next plan. You choose which to keep.' },
+  { merchant: 'mithas', view: 'overview', target: 'lang', title: 'Built for India', body: 'Customer messages already go out in English, हिंदी or Hinglish. The dashboard itself and more languages (Tamil, Telugu, Marathi, Bengali) are coming soon.' },
+  { merchant: 'mithas', view: 'controls', target: 'preferences', title: 'You stay in charge', body: 'Set your discount limit, message cap and quiet hours, switch layers on or off, or pause Seasons. Loosening a protection always asks you to confirm. Everything is in the Activity log.' },
 ];
+
+
+/* ------------------------------------------------------------------
+   Amount used when Seasons creates a real Razorpay TEST Payment Link on approval
+------------------------------------------------------------------- */
+export const linkAmount: Record<string, { amount: number; description: string }> = {
+  'm-winback': { amount: 2077, description: 'Mithas Diwali box · early access' },
+  'm-salary': { amount: 1056, description: 'Mithas · this month’s box' },
+  'k-timing': { amount: 3000, description: 'Kata Academy · October fees' },
+  'c-regulars': { amount: 600, description: 'Courtside · Friday court, 7–8 PM' },
+  'c-dues': { amount: 2500, description: 'Courtside · October membership' },
+  't-weekend': { amount: 1000, description: 'Thanda Cool · showroom visit booking' },
+};
+
+/* ------------------------------------------------------------------
+   Playbooks: one engine, a template per kind of business
+------------------------------------------------------------------- */
+export const playbook: Record<string, string> = {
+  mithas: 'Festive D2C',
+  kata: 'Courses & academies',
+  courtside: 'Clubs & memberships',
+  thanda: 'Seasonal retail',
+};
+
+/* ------------------------------------------------------------------
+   Readiness plan: dated tasks counted back from the next moment
+   kind: auto = Seasons did it · action = done when you approve that suggestion · confirm = only you can confirm it
+------------------------------------------------------------------- */
+export interface PlanItem { id: string; date: string; label: string; kind: 'auto' | 'action' | 'confirm'; actionId?: string; note?: string }
+export interface Plan { layer: 'year' | 'month'; title: string; goal: string; goalDate: string; items: PlanItem[] }
+
+export const readinessPlans: Record<string, Plan> = {
+  mithas: {
+    layer: 'year', title: 'Diwali readiness', goal: 'Rush begins', goalDate: '18 Oct',
+    items: [
+      { id: 'f', date: '7 Sep', label: 'Peak forecast and plan', kind: 'auto' },
+      { id: 'card', date: '10 Sep', label: 'UPI-first checkout', kind: 'action', actionId: 'm-cards' },
+      { id: 'fund', date: '15 Sep', label: 'Decide stock funding', kind: 'action', actionId: 'm-stock' },
+      { id: 'lead', date: '18 Sep', label: 'Confirm supplier lead time (25 days)', kind: 'confirm', note: 'Razorpay can’t see your supplier' },
+      { id: 'order', date: '23 Sep', label: 'Place supplier order', kind: 'confirm', note: 'Only you can confirm stock' },
+      { id: 'intl', date: '30 Sep', label: 'International cards on', kind: 'action', actionId: 'm-intl' },
+      { id: 'msg', date: '1 Oct', label: 'Message last Diwali’s buyers', kind: 'action', actionId: 'm-winback' },
+      { id: 'pack', date: '10 Oct', label: 'Packing staff and courier booked', kind: 'confirm', note: 'Courier delays hit Rakhi' },
+    ],
+  },
+  kata: {
+    layer: 'month', title: 'October fee cycle readiness', goal: 'Fees due', goalDate: '5 Oct',
+    items: [
+      { id: 'g', date: '7 Sep', label: 'Families grouped by when they pay', kind: 'auto' },
+      { id: 'fee', date: '25 Sep', label: 'Confirm October fee (₹3,000)', kind: 'confirm', note: 'Fee changes live outside Razorpay' },
+      { id: 'exp', date: '28 Sep', label: 'Link expiry set to 8 Oct', kind: 'action', actionId: 'k-expiry' },
+      { id: 'links', date: '30 Sep', label: 'Per-family link schedule', kind: 'action', actionId: 'k-timing' },
+      { id: 'auto', date: '1 Oct', label: 'AutoPay invite to 38 families', kind: 'action', actionId: 'k-autopay' },
+      { id: 'hold', date: '5 Oct', label: 'Ask me before removing access', kind: 'action', actionId: 'k-hold' },
+    ],
+  },
+  courtside: {
+    layer: 'year', title: 'High-season readiness', goal: 'High season', goalDate: '3 Oct',
+    items: [
+      { id: 'f', date: '7 Sep', label: 'Season forecast', kind: 'auto' },
+      { id: 'reg', date: '10 Sep', label: 'Check in with quiet regulars', kind: 'action', actionId: 'c-regulars' },
+      { id: 'tue', date: '14 Sep', label: 'Tuesday members’ offer', kind: 'action', actionId: 'c-tuesday' },
+      { id: 'league', date: '18 Sep', label: 'League invites to 74 members', kind: 'action', actionId: 'c-season' },
+      { id: 'courts', date: '25 Sep', label: 'Outdoor courts and coaches ready', kind: 'confirm', note: 'Only you can confirm this' },
+      { id: 'dues', date: '1 Oct', label: 'October dues on WhatsApp', kind: 'action', actionId: 'c-dues' },
+    ],
+  },
+  thanda: {
+    layer: 'year', title: 'Festive readiness (predicted)', goal: 'Festive buying', goalDate: '15 Oct',
+    items: [
+      { id: 'f', date: '7 Sep', label: 'Starter plan from similar merchants', kind: 'auto' },
+      { id: 'emi', date: '10 Sep', label: 'EMI options on', kind: 'action', actionId: 't-emi' },
+      { id: 'visit', date: '11 Sep', label: 'Weekend invite to deposit holders', kind: 'action', actionId: 't-weekend' },
+      { id: 'stock', date: '21 Sep', label: 'Decide festive stock', kind: 'action', actionId: 't-stock' },
+      { id: 'lead', date: '24 Sep', label: 'Confirm supplier lead time', kind: 'confirm', note: 'Razorpay can’t see your supplier' },
+    ],
+  },
+};

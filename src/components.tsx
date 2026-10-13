@@ -10,7 +10,8 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
-import { products, runsOn, readiness, quickInsights, tourSteps } from './extras';
+import { products, runsOn, readiness, quickInsights, tourSteps, linkAmount } from './extras';
+import { createTestLinks } from './razorpay';
 import { aiRewrite, RewriteMode } from './ai';
 
 /* ---------------- Shell ---------------- */
@@ -196,6 +197,7 @@ export function ActionCard({ a }: { a: Action }) {
           <span><b>When</b> · {a.when}</span>
         </div>
         <RunsOn id={a.id} />
+        {st === 'approved' && status[a.id]?.linkMode && <CreatedLinks links={status[a.id]?.links} mode={status[a.id]!.linkMode!} />}
       </div>
       <div className="action-btns">
         {st === 'pending' && (
@@ -277,6 +279,7 @@ export function ApprovalDrawer() {
   const [busy, setBusy] = useState<RewriteMode | null>(null);
   const [aiNote, setAiNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [lang, setLang] = useState<'en' | 'hindi' | 'hinglish'>('en');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!a) return;
@@ -313,10 +316,20 @@ export function ApprovalDrawer() {
   const totalNote = a.id === 'm-winback' ? ` (showing 8 of 86 · ${chosen === 6 ? 64 : chosen} will receive it)` : '';
   const isMsg = a.kind === 'message';
 
-  const doApprove = () => {
+  const doApprove = async () => {
     if (isMsg) {
       const n = a.id === 'm-winback' && chosen === 6 ? 64 : a.id === 'k-timing' && chosen === 5 ? 108 : chosen;
-      approve(a, `${a.when} · ${n} recipient${n === 1 ? '' : 's'}`, `${n} recipients, message ${msg === a.message ? 'as drafted' : 'edited by you'}.`);
+      const note = `${a.when} · ${n} recipient${n === 1 ? '' : 's'}`;
+      const detail = `${n} recipients, message ${msg === a.message ? 'as drafted' : 'edited by you'}${lang !== 'en' ? ` (${lang === 'hindi' ? 'Hindi' : 'Hinglish'})` : ''}.`;
+      const la = linkAmount[a.id];
+      if (la) {
+        setCreating(true);
+        const names = (a.recipients ?? []).filter((r) => selected[r.name]).map((r) => r.name);
+        const r = await createTestLinks(names, la.amount, la.description, merchant.name);
+        setCreating(false);
+        if (r.ok) approve(a, note, detail, r.links, 'test');
+        else approve(a, note, `${detail} (${r.reason}; sample links shown.)`, undefined, 'sample');
+      } else approve(a, note, detail);
     } else {
       approve(a, a.when, a.settingChange?.map((c) => `${c.label}: ${c.to}`).join('; ') ?? '');
     }
@@ -456,11 +469,11 @@ export function ApprovalDrawer() {
         </div>
 
         <div className="drawer-foot">
-          <div className="row gap-8"><InfoIcon size="small" color="surface.icon.gray.muted" /><Text size="small" color="surface.text.gray.muted">Your decision and any edits teach Seasons what to suggest next time.</Text></div>
+          <div className="row gap-8"><InfoIcon size="small" color="surface.icon.gray.muted" /><Text size="small" color="surface.text.gray.muted">{creating ? 'Creating Payment Links in Razorpay test mode…' : linkAmount[a.id] ? `On approval, Seasons creates real Razorpay test-mode Payment Links (₹${linkAmount[a.id].amount.toLocaleString('en-IN')}) for the customers shown. Nothing is sent.` : 'Your decision and any edits teach Seasons what to suggest next time.'}</Text></div>
           <div className="row gap-8">
             <Button variant="tertiary" onClick={() => skip(a)}>Skip</Button>
             <Button variant="secondary" onClick={() => openDrawer(null)}>Cancel</Button>
-            <Button onClick={doApprove} isDisabled={isMsg && chosen === 0}>{isMsg ? 'Approve & schedule' : a.kind === 'finance' ? 'Approve & prefill' : 'Approve change'}</Button>
+            <Button onClick={doApprove} isLoading={creating} isDisabled={(isMsg && chosen === 0) || creating}>{isMsg ? 'Approve & schedule' : a.kind === 'finance' ? 'Approve & prefill' : 'Approve change'}</Button>
           </div>
         </div>
       </aside>
@@ -599,7 +612,7 @@ export function ReadinessPanel() {
       <div className="row between wrap gap-8">
         <div className="stack gap-4">
           <div className="row gap-8">
-            <Badge size="small" color={predictive ? 'information' : 'positive'}>{predictive ? 'Predictive mode' : 'Your own data'}</Badge>
+            <span style={{ flexShrink: 0 }}><Badge size="small" color={predictive ? 'information' : 'positive'}>{predictive ? 'Predictive mode' : 'Your own data'}</Badge></span>
             <Text size="small" color="surface.text.gray.muted">Seasons checked your account: {r.found}</Text>
           </div>
           {predictive && (
@@ -668,7 +681,7 @@ export function Tour() {
       const el = document.querySelector(`[data-tour="${st.target}"]`);
       if (el) {
         el.classList.add('tour-focus');
-        if (st.target !== 'drawer') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (st.target !== 'drawer' && st.target !== 'lang') el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }, 260);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
@@ -721,7 +734,7 @@ export function LanguageSwitch() {
     return () => window.removeEventListener('click', close);
   }, [open]);
   return (
-    <div className="lang-switch" onClick={(e) => e.stopPropagation()}>
+    <div className="lang-switch" data-tour="lang" onClick={(e) => e.stopPropagation()}>
       <button className="lang-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <TranslateIcon size="small" color="surface.icon.gray.subtle" />EN<ChevronDownIcon size="xsmall" color="surface.icon.gray.muted" />
       </button>
@@ -738,6 +751,30 @@ export function LanguageSwitch() {
           <div className="lang-foot">Customer messages: English, हिंदी and Hinglish available now</div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/* ---------------- Payment Links created on approval ---------------- */
+
+export function CreatedLinks({ links, mode }: { links?: { name: string; url?: string; ok: boolean }[]; mode: 'test' | 'sample' }) {
+  if (mode === 'sample' || !links?.length) {
+    return <div className="links-box sample"><Text size="xsmall" color="surface.text.gray.muted">Sample links shown · Razorpay test keys weren’t available, so nothing was created.</Text></div>;
+  }
+  const ok = links.filter((l) => l.ok && l.url);
+  return (
+    <div className="links-box">
+      <div className="row gap-8 wrap">
+        <Badge size="xsmall" color="positive" icon={CheckCircleIcon}>{`${ok.length} Payment Link${ok.length === 1 ? '' : 's'} created in Razorpay`}</Badge>
+        <span className="test-tag">Test mode · nothing sent</span>
+      </div>
+      <div className="links-list">
+        {ok.slice(0, 4).map((l) => (
+          <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="plink">{l.name.split(' (')[0]} <span>{l.url!.replace('https://', '')}</span></a>
+        ))}
+        {ok.length > 4 && <span className="plink more">+{ok.length - 4} more</span>}
+      </div>
     </div>
   );
 }

@@ -456,6 +456,26 @@ export const merchants: Merchant[] = [
           'Hi {parent_name}, {student_name}’s Kata fees for October (₹3,000) are due by 5 Oct. Pay here: {payment_link}\nReply STOP to opt out.',
       },
       {
+        id: 'k-expiry',
+        layer: 'month',
+        kind: 'setting',
+        title: 'Don’t let October links expire before families pay',
+        summary: 'Keep the 5 Oct deadline in the message, but let links stay open until 8 Oct so late payers aren’t cut off.',
+        why: [
+          '9% of families usually pay on the 6th–8th; a link that expires on the 5th cuts them off.',
+          '7% of links expired before they were opened in the last 3 cycles.',
+          'You told us expiry sometimes closes early, so Seasons adds a buffer after your stated deadline.',
+        ],
+        impact: 'About 9–13 fewer families locked out each month',
+        confidence: 'High',
+        executesVia: 'Payment Links (expiry date)',
+        when: 'Applies to the October batch (sent from 30 Sep)',
+        settingChange: [
+          { label: 'Deadline shown in message', from: '5 Oct', to: '5 Oct (unchanged)' },
+          { label: 'Link expiry', from: '5 Oct, 11:59 PM', to: '8 Oct, 11:59 PM' },
+        ],
+      },
+      {
         id: 'k-hold',
         layer: 'month',
         kind: 'setting',
@@ -518,7 +538,7 @@ export const merchants: Merchant[] = [
       },
     ],
     moments: [
-      { date: '7 Sep', title: 'October fee plan ready', layer: 'month', status: 'now', note: '3 actions to approve' },
+      { date: '7 Sep', title: 'October fee plan ready', layer: 'month', status: 'now', note: '4 actions to approve' },
       { date: '30 Sep', title: 'First links go out', layer: 'month', status: 'soon', note: 'Per-family schedule' },
       { date: '5 Oct', title: 'Fee deadline', layer: 'month', status: 'soon', note: 'Ask-before-removing on' },
       { date: '2 Nov', title: 'Winter batch plan opens', layer: 'year', status: 'later', note: '8 weeks before January' },
@@ -545,7 +565,7 @@ export const merchants: Merchant[] = [
         'Two parents said the SMS link had expired when they opened it. One family was travelling and paid late. Collections were smooth otherwise.',
     },
     whatsapp:
-      'Seasons · Kata Martial Arts Academy\n\nOctober fees are due 1–5 Oct. 46% of your families pay on the 1st–2nd, so Seasons will time each link to when that family usually pays, on WhatsApp.\n\n3 actions are ready for your approval.',
+      'Seasons · Kata Martial Arts Academy\n\nOctober fees are due 1–5 Oct. 46% of your families pay on the 1st–2nd, so Seasons will time each link to when that family usually pays, on WhatsApp.\n\n4 actions are ready for your approval.',
   },
   {
     id: 'courtside',

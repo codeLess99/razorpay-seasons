@@ -8,8 +8,10 @@ import {
 } from '@razorpay/blade/components';
 import { useSeasons } from './state';
 import { DAYS, BLOCKS, Layer, formatINR } from './data';
+import { readinessPlans } from './extras';
 import { ActionList, Facts, Insight, RayWhatsApp, layerName, QuickInsights, ReadinessPanel, ConfirmDialog } from './components';
 import { aiLessons } from './ai';
+import { YearStrip, PlaybookTag, Ring, usePlanProgress, ReadinessPlan, MiniWeek, MiniMonth, MiniYear, HowFlow, shortFact } from './visuals';
 
 const PRIMARY = 'hsl(218, 89%, 51%)';
 const PRIMARY_LIGHT = 'hsla(218, 89%, 51%, 0.16)';
@@ -21,22 +23,34 @@ const GRID = 'hsl(204, 8%, 92%)';
 
 export function Overview() {
   const { merchant: m, setView, pendingCount, setWaOpen } = useSeasons();
-  const layers: { id: Layer; Icon: typeof CalendarIcon; title: string; text: string }[] = [
-    { id: 'week', Icon: ClockIcon, title: 'This week', text: m.weekly.insight },
-    { id: 'month', Icon: CalendarIcon, title: 'This month', text: m.monthly.insight },
-    { id: 'year', Icon: TrendingUpIcon, title: 'This year', text: m.annual.insight },
+  const { plan, done, total } = usePlanProgress(m);
+  const layers: { id: Layer; Icon: typeof CalendarIcon; title: string; viz: React.ReactNode }[] = [
+    { id: 'week', Icon: ClockIcon, title: 'This week', viz: <MiniWeek grid={m.weekly.grid} /> },
+    { id: 'month', Icon: CalendarIcon, title: 'This month', viz: <MiniMonth days={m.monthly.days} /> },
+    { id: 'year', Icon: TrendingUpIcon, title: 'This year', viz: <MiniYear m={m} /> },
   ];
   return (
     <div className="stack gap-20">
-      <div className="hero">
-        <span className="eyebrow"><SparklesIcon size="small" color="surface.icon.staticWhite.normal" />Next moment · {layerName[m.headline.layer]}</span>
-        <h2>{m.headline.title}</h2>
-        <p>{m.headline.sub}</p>
-        <div className="hero-actions">
-          <button className="btn-white" onClick={() => setView(m.headline.layer)}>Review the plan ({pendingCount(m.headline.layer)} actions)</button>
-          <button className="btn-ghost" onClick={() => setWaOpen(true)}>See the WhatsApp alert</button>
+      <div className="hero" data-tour="hero">
+        <div className="hero-top">
+          <div className="hero-text">
+            <span className="eyebrow"><SparklesIcon size="small" color="surface.icon.staticWhite.normal" />Next moment · {layerName[m.headline.layer]}<PlaybookTag m={m} /></span>
+            <h2>{m.headline.title}</h2>
+            <p>{m.headline.sub}</p>
+            <div className="hero-actions">
+              <button className="btn-white" onClick={() => setView(m.headline.layer)}>Review the plan ({pendingCount(m.headline.layer)} actions)</button>
+              <button className="btn-ghost" onClick={() => setWaOpen(true)}>See the WhatsApp alert</button>
+            </div>
+          </div>
+          <div className="hero-side">
+            <div className="hero-count"><div className="big">{m.headline.countdown.split(' ')[0]}</div><div className="small">{m.headline.countdown.split(' ').slice(1).join(' ')}</div></div>
+            <button className="hero-ready" onClick={() => setView(plan.layer)} title="Open readiness plan">
+              <Ring done={done} total={total} size={54} light />
+              <span>{done === total ? 'Ready' : 'tasks ready'}<br /><b>{plan.title.replace(' readiness', '').replace(' (predicted)', '')}</b></span>
+            </button>
+          </div>
         </div>
-        <div className="hero-count"><div className="big">{m.headline.countdown.split(' ')[0]}</div><div className="small">{m.headline.countdown.split(' ').slice(1).join(' ')}</div></div>
+        <YearStrip m={m} />
       </div>
 
       <div className="grid-insights">
@@ -47,11 +61,15 @@ export function Overview() {
       <div className="grid-main">
         <div className="stack gap-16">
           <div className="grid-3">
-            {layers.map(({ id, Icon, title, text }) => (
+            {layers.map(({ id, Icon, title, viz }) => (
               <button key={id} className="card card-pad layer-card stack gap-8" onClick={() => setView(id)}>
                 <span className="layer-tag"><Icon size="small" color="surface.icon.primary.normal" />{title}</span>
-                <Text size="small" color="surface.text.gray.subtle">{text}</Text>
-                <span className="row between mt-8">
+                <div className="mini-viz">{viz}</div>
+                <div className="stack">
+                  <span className="mini-val">{shortFact(m, id).value}</span>
+                  <Text size="xsmall" color="surface.text.gray.muted">{shortFact(m, id).label}</Text>
+                </div>
+                <span className="row between">
                   <Badge size="small" color={pendingCount(id) ? 'primary' : 'neutral'}>{pendingCount(id) ? `${pendingCount(id)} to approve` : 'Nothing pending'}</Badge>
                   <ArrowRightIcon size="small" color="surface.icon.gray.muted" />
                 </span>
@@ -62,7 +80,7 @@ export function Overview() {
           <div className="card card-pad">
             <div className="row between"><Heading size="small">Coming up</Heading><Text size="small" color="surface.text.gray.muted">Detected from {m.dataDays < 60 ? 'similar merchants + your first weeks' : 'your payments'}</Text></div>
             <div className="timeline mt-12">
-              {m.moments.map((mo) => (
+              {m.moments.slice(0, 4).map((mo) => (
                 <div className="moment" key={mo.date + mo.title}>
                   <div className="moment-date">{mo.date}</div>
                   <div className="moment-rail"><span className={`moment-dot ${mo.status}`} /></div>
@@ -77,17 +95,7 @@ export function Overview() {
 
           <div>
             <Text size="small" weight="semibold" color="surface.text.gray.muted">HOW SEASONS WORKS</Text>
-            <div className="how mt-8">
-              {[
-                ['1 · Detect', 'Learns your rhythm from payments (or similar merchants if you’re new)'],
-                ['2 · Plan', 'Prepares actions 6–8 weeks before a peak, or days before a cycle'],
-                ['3 · You approve', 'Nothing reaches a customer or your money without you'],
-                ['4 · Act', 'Runs on Razorpay products you already have: Links, Engage, Capital'],
-                ['5 · Learn', 'Compares forecast with actual, asks you what happened, improves'],
-              ].map(([n, t], i) => (
-                <div key={n} className={`how-step ${i === 2 ? 'you' : ''}`}><div className="n">{n}</div><Text size="small" color="surface.text.gray.subtle">{t}</Text></div>
-              ))}
-            </div>
+            <HowFlow />
           </div>
         </div>
 
@@ -115,6 +123,7 @@ export function YearView() {
   return (
     <div className="stack gap-16">
       <Insight>{m.annual.insight}</Insight>
+      {readinessPlans[m.id].layer === 'year' && <ReadinessPlan m={m} />}
       <div className="card chart-card" data-tour="year-chart">
         <div className="row between wrap gap-8">
           <div className="stack gap-4">
@@ -164,6 +173,7 @@ export function MonthView() {
         <div className="arrow"><ArrowRightIcon size="medium" color="surface.icon.gray.muted" /></div>
         <div className="side new"><Text size="small" weight="semibold" color="surface.text.primary.normal">WITH SEASONS</Text><Text size="medium" weight="semibold">{m.monthly.proposed}</Text></div>
       </div>
+      {readinessPlans[m.id].layer === 'month' && <ReadinessPlan m={m} />}
       <div className="grid-2">
         <div className="card chart-card">
           <Heading size="small">When customers pay (share of payments by day)</Heading>

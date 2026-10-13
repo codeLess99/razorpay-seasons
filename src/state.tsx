@@ -2,7 +2,8 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { merchants, Merchant, Action, Layer, lessonsFromFeedback } from './data';
 
 export type View = 'overview' | 'year' | 'month' | 'week' | 'review' | 'controls' | 'activity';
-export type ActionState = { state: 'pending' | 'approved' | 'skipped'; note?: string };
+export type TestLink = { name: string; url?: string; ok: boolean };
+export type ActionState = { state: 'pending' | 'approved' | 'skipped'; note?: string; links?: TestLink[]; linkMode?: 'test' | 'sample' };
 export type LogEntry = { time: string; merchantId: string; actor: 'Seasons' | 'You'; text: string };
 export type Lesson = { signal: string; change: string; layer: Layer; applied: boolean };
 export type Settings = {
@@ -41,7 +42,9 @@ interface Ctx {
   view: View;
   setView: (v: View) => void;
   status: Record<string, ActionState>;
-  approve: (a: Action, note: string, detail: string) => void;
+  approve: (a: Action, note: string, detail: string, links?: TestLink[], linkMode?: 'test' | 'sample') => void;
+  confirmed: Record<string, boolean>;
+  toggleConfirm: (key: string, label: string) => void;
   skip: (a: Action) => void;
   undo: (a: Action) => void;
   log: LogEntry[];
@@ -77,6 +80,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const [lessons, setLessons] = useState<Record<string, Lesson[]>>({});
   const [settingsMap, setSettingsMap] = useState<Record<string, Settings>>({});
   const [tourStep, setTourStep] = useState<number | null>(null);
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
 
   const merchant = useMemo(() => merchants.find((m) => m.id === merchantId)!, [merchantId]);
   const settings = settingsMap[merchantId] ?? defaultSettings();
@@ -90,9 +94,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
     window.setTimeout(() => setToast((cur) => (cur === t ? null : cur)), 3200);
   }, []);
 
-  const approve = useCallback((a: Action, note: string, detail: string) => {
-    setStatus((s) => ({ ...s, [a.id]: { state: 'approved', note } }));
+  const approve = useCallback((a: Action, note: string, detail: string, links?: TestLink[], linkMode?: 'test' | 'sample') => {
+    setStatus((s) => ({ ...s, [a.id]: { state: 'approved', note, links, linkMode } }));
     addLog('You', `Approved “${a.title}”. ${detail}`);
+    if (linkMode === 'test' && links?.length) addLog('Seasons', `Created ${links.filter((l) => l.ok).length} Payment Link${links.length > 1 ? 's' : ''} in Razorpay test mode (notifications off).`);
     if (a.kind === 'message') addLog('Seasons', `Scheduled via ${a.executesVia}: ${note}.`);
     else addLog('Seasons', `Applied via ${a.executesVia}: ${note}.`);
     setDrawer(null);
@@ -134,12 +139,20 @@ export function Provider({ children }: { children: React.ReactNode }) {
     merchant.actions.filter((a) => (!layer || a.layer === layer) && (status[a.id]?.state ?? 'pending') === 'pending').length,
   [merchant, status]);
 
+  const toggleConfirm = useCallback((key: string, label: string) => {
+    setConfirmed((c) => {
+      const next = !c[key];
+      addLog('You', `${next ? 'Confirmed' : 'Un-confirmed'}: ${label}.`);
+      return { ...c, [key]: next };
+    });
+  }, [addLog]);
+
   const setMerchantId = (id: string) => { setMerchantIdRaw(id); setDrawer(null); };
 
   const value: Ctx = {
     merchant, merchantId, setMerchantId, view, setView, status, approve, skip, undo, log,
     drawer, openDrawer: setDrawer, waOpen, setWaOpen, toast, showToast,
-    lessons, makeLessons, toggleLesson, settings, updateSettings, pendingCount, addLog, tourStep, setTourStep,
+    lessons, makeLessons, toggleLesson, settings, updateSettings, pendingCount, addLog, tourStep, setTourStep, confirmed, toggleConfirm,
   };
   return <C.Provider value={value}>{children}</C.Provider>;
 }
