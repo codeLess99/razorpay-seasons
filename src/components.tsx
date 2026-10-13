@@ -6,7 +6,7 @@ import {
   SettingsIcon, CalendarIcon, SparklesIcon, CloseIcon, CheckCircleIcon, LockIcon, ClockIcon,
   ShoppingBagIcon, EducationIcon, AwardIcon, ThermometerIcon, MessageCircleIcon, ArrowRightIcon,
   InfoIcon, SearchIcon, BellIcon, HelpCircleIcon, TrendingUpIcon, HistoryIcon, SlidersIcon,
-  RazorpayIcon, SunIcon, PlayCircleIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon,
+  RazorpayIcon, SunIcon, PlayCircleIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, TranslateIcon, ChevronDownIcon, CheckIcon,
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
@@ -29,6 +29,7 @@ export function TopNav() {
       </nav>
       <div className="topnav-right">
         <span className="proto-badge">Prototype</span>
+        <LanguageSwitch />
         <SearchIcon size="medium" color="surface.icon.gray.muted" />
         <HelpCircleIcon size="medium" color="surface.icon.gray.muted" />
         <BellIcon size="medium" color="surface.icon.gray.muted" />
@@ -275,6 +276,7 @@ export function ApprovalDrawer() {
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState<RewriteMode | null>(null);
   const [aiNote, setAiNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [lang, setLang] = useState<'en' | 'hindi' | 'hinglish'>('en');
 
   useEffect(() => {
     if (!a) return;
@@ -284,13 +286,21 @@ export function ApprovalDrawer() {
     setMsg(a.message ?? '');
     setAiNote(null);
     setBusy(null);
+    setLang('en');
   }, [a]);
 
   const rewrite = async (mode: RewriteMode) => {
     if (!a) return;
     setBusy(mode); setAiNote(null);
-    const r = await aiRewrite(merchant.name, msg, mode, settings.discountCap);
-    if (r.ok) { setMsg(r.message); setAiNote({ ok: true, text: 'Rewritten by Gemini · Seasons checked it: link and name kept, STOP kept, no new discounts or amounts.' }); }
+    // Translations always start from the original English draft, so switching languages doesn't compound.
+    const isLang = mode === 'hindi' || mode === 'hinglish';
+    const source = isLang ? (a.message ?? msg) : msg;
+    const r = await aiRewrite(merchant.name, source, mode, settings.discountCap);
+    if (r.ok) {
+      setMsg(r.message);
+      if (isLang) setLang(mode);
+      setAiNote({ ok: true, text: `${isLang ? 'Translated' : 'Rewritten'} by Gemini · Seasons checked it: name and link kept, STOP kept, no new discounts or amounts.` });
+    }
     else setAiNote({ ok: false, text: `${r.reason}. Your message is unchanged.` });
     setBusy(null);
   };
@@ -369,12 +379,26 @@ export function ApprovalDrawer() {
               <div className="stack gap-8">
                 <TextArea label="Message (edit freely)" value={msg} onChange={({ value }) => setMsg(value ?? '')} numberOfLines={5}
                   helpText="{first_name} and the payment link are filled in for each customer." />
-                <div className="row gap-8 wrap">
-                  <span className="row gap-4"><SparklesIcon size="small" color="surface.icon.primary.normal" /><Text size="small" weight="semibold">Rewrite with AI</Text></span>
-                  {([['hindi', 'Hindi'], ['hinglish', 'Hinglish'], ['shorter', 'Shorter'], ['friendlier', 'Friendlier']] as [RewriteMode, string][]).map(([mode, label]) => (
-                    <Button key={mode} size="xsmall" variant="secondary" isLoading={busy === mode} isDisabled={!!busy && busy !== mode} onClick={() => rewrite(mode)}>{label}</Button>
-                  ))}
-                  {msg !== a.message && <Button size="xsmall" variant="tertiary" onClick={() => { setMsg(a.message ?? ''); setAiNote(null); }}>Back to original</Button>}
+                <div className="msg-tools">
+                  <div className="row gap-8 wrap">
+                    <span className="tool-label"><TranslateIcon size="small" color="surface.icon.primary.normal" />Message language</span>
+                    <div className="seg lang-seg">
+                      <button className={lang === 'en' ? 'on' : ''} disabled={!!busy} onClick={() => { setMsg(a.message ?? ''); setLang('en'); setAiNote(null); }}>English</button>
+                      <button className={lang === 'hindi' ? 'on' : ''} disabled={!!busy} onClick={() => rewrite('hindi')}>{busy === 'hindi' ? 'Translating…' : 'हिंदी'}</button>
+                      <button className={lang === 'hinglish' ? 'on' : ''} disabled={!!busy} onClick={() => rewrite('hinglish')}>{busy === 'hinglish' ? 'Translating…' : 'Hinglish'}</button>
+                    </div>
+                    <span className="soon-langs" title="More languages coming soon">
+                      {['தமிழ்', 'తెలుగు', 'मराठी', 'বাংলা', 'ಕನ್ನಡ'].map((l) => <span key={l} className="soon-lang">{l}</span>)}
+                      <span className="soon-tag">Coming soon</span>
+                    </span>
+                  </div>
+                  <div className="row gap-8 wrap">
+                    <span className="tool-label"><SparklesIcon size="small" color="surface.icon.primary.normal" />Adjust with AI</span>
+                    {([['shorter', 'Shorter'], ['friendlier', 'Friendlier']] as [RewriteMode, string][]).map(([mode, label]) => (
+                      <Button key={mode} size="xsmall" variant="secondary" isLoading={busy === mode} isDisabled={!!busy && busy !== mode} onClick={() => rewrite(mode)}>{label}</Button>
+                    ))}
+                    {msg !== a.message && <Button size="xsmall" variant="tertiary" onClick={() => { setMsg(a.message ?? ''); setLang('en'); setAiNote(null); }}>Back to original</Button>}
+                  </div>
                 </div>
                 {aiNote && <div className={`ai-note ${aiNote.ok ? 'ok' : 'no'}`}>{aiNote.text}</div>}
               </div>
@@ -671,6 +695,49 @@ export function Tour() {
           <Button size="small" onClick={() => (last ? end() : go(tourStep + 1))}>{last ? 'Finish' : 'Next'}</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/* ---------------- Dashboard language switch ---------------- */
+
+const dashLangs = [
+  { code: 'en', label: 'English', native: 'English', live: true },
+  { code: 'hi', label: 'Hindi', native: 'हिंदी', live: false },
+  { code: 'ta', label: 'Tamil', native: 'தமிழ்', live: false },
+  { code: 'te', label: 'Telugu', native: 'తెలుగు', live: false },
+  { code: 'mr', label: 'Marathi', native: 'मराठी', live: false },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা', live: false },
+];
+
+export function LanguageSwitch() {
+  const { showToast } = useSeasons();
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [open]);
+  return (
+    <div className="lang-switch" onClick={(e) => e.stopPropagation()}>
+      <button className="lang-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <TranslateIcon size="small" color="surface.icon.gray.subtle" />EN<ChevronDownIcon size="xsmall" color="surface.icon.gray.muted" />
+      </button>
+      {open && (
+        <div className="lang-menu" role="menu">
+          <div className="lang-head">Dashboard language</div>
+          {dashLangs.map((l) => (
+            <button key={l.code} role="menuitem" className={`lang-item ${l.live ? '' : 'soon'}`}
+              onClick={() => { setOpen(false); if (!l.live) showToast(`${l.label} dashboard coming soon. Customer messages can already go out in Hindi.`); }}>
+              <span>{l.native}{l.native !== l.label && <span className="lang-en"> · {l.label}</span>}</span>
+              {l.live ? <CheckIcon size="small" color="surface.icon.primary.normal" /> : <span className="soon-tag">Coming soon</span>}
+            </button>
+          ))}
+          <div className="lang-foot">Customer messages: English, हिंदी and Hinglish available now</div>
+        </div>
+      )}
     </div>
   );
 }

@@ -344,3 +344,21 @@ table.simple tr:last-child td { border-bottom: 0; }
 .ai-note { font-size: 12px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; }
 .ai-note.ok { background: var(--primary-faded); color: var(--primary-dark); }
 .ai-note.no { background: var(--notice-faded); color: hsla(25, 100%, 30%, 1); }
+
+/* ---------- Languages ---------- */
+.msg-tools { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: hsla(0, 0%, 98%, 1); }
+.tool-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-subtle); min-width: 150px; }
+.lang-seg button:disabled { cursor: wait; opacity: 0.7; }
+.soon-langs { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.soon-lang { font-size: 12px; color: var(--text-muted); padding: 3px 7px; border-radius: 6px; border: 1px dashed var(--border-strong); background: #fff; }
+.soon-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; color: var(--notice); background: var(--notice-faded); padding: 2px 6px; border-radius: 5px; white-space: nowrap; }
+.lang-switch { position: relative; }
+.lang-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--text-subtle); background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; cursor: pointer; }
+.lang-btn:hover { border-color: var(--border-strong); }
+.lang-menu { position: absolute; right: 0; top: calc(100% + 6px); width: 270px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 32px rgba(11, 27, 61, 0.16); padding: 6px; z-index: 50; }
+.lang-head { font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--text-muted); padding: 8px 10px 6px; }
+.lang-item { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; padding: 9px 10px; border: 0; background: none; border-radius: 8px; font-size: 14px; color: var(--text); cursor: pointer; text-align: left; }
+.lang-item:hover { background: hsla(206, 10%, 29%, 0.06); }
+.lang-item.soon { color: var(--text-subtle); }
+.lang-en { font-size: 12px; color: var(--text-muted); }
+.lang-foot { font-size: 12px; color: var(--text-muted); padding: 8px 10px 6px; border-top: 1px solid var(--border); margin-top: 4px; }
