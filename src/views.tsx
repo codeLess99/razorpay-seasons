@@ -9,6 +9,7 @@ import {
 import { useSeasons } from './state';
 import { DAYS, BLOCKS, Layer, formatINR } from './data';
 import { ActionList, Facts, Insight, RayWhatsApp, layerName, QuickInsights, ReadinessPanel, ConfirmDialog } from './components';
+import { aiLessons } from './ai';
 
 const PRIMARY = 'hsl(218, 89%, 51%)';
 const PRIMARY_LIGHT = 'hsla(218, 89%, 51%, 0.16)';
@@ -238,15 +239,19 @@ export function WeekView() {
 /* ---------------- Review & learn ---------------- */
 
 export function ReviewView() {
-  const { merchant: m, lessons, makeLessons, toggleLesson } = useSeasons();
+  const { merchant: m, lessons, makeLessons, toggleLesson, settings } = useSeasons();
   const r = m.review;
   const [text, setText] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [source, setSource] = useState<Record<string, string>>({});
   const mine = lessons[m.id];
-  const submit = () => {
+  const submit = async () => {
     if (!text.trim()) return;
     setThinking(true);
-    window.setTimeout(() => { makeLessons(text); setThinking(false); }, 1300);
+    const r = await aiLessons(m, text, settings.discountCap);
+    makeLessons(text, r.value, r.ok ? 'Gemini' : 'offline rules');
+    setSource((x) => ({ ...x, [m.id]: r.ok ? 'gemini' : `fallback:${r.reason}` }));
+    setThinking(false);
   };
   const tone = { positive: 'positive', notice: 'notice', negative: 'negative', neutral: 'neutral' } as const;
   return (
@@ -291,10 +296,15 @@ export function ReviewView() {
           <Button onClick={submit} isDisabled={!text.trim() || thinking} icon={SparklesIcon}>Turn into changes for next time</Button>
           <Button variant="tertiary" onClick={() => setText(r.sampleFeedback)}>Use example notes</Button>
         </div>
-        {thinking && <div className="thinking"><span className="spinner" />Reading your notes against this season’s numbers…</div>}
+        {thinking && <div className="thinking"><span className="spinner" />Gemini is reading your notes against this season’s numbers…</div>}
         {!thinking && mine && (
           <div className="stack gap-8">
-            <Text size="small" weight="semibold" color="surface.text.gray.muted">PROPOSED CHANGES · YOU DECIDE WHICH TO KEEP</Text>
+            <div className="row between wrap gap-8">
+              <Text size="small" weight="semibold" color="surface.text.gray.muted">PROPOSED CHANGES · YOU DECIDE WHICH TO KEEP</Text>
+              {source[m.id] === 'gemini'
+                ? <Badge size="small" color="primary" icon={SparklesIcon}>Written by Gemini, checked by Seasons</Badge>
+                : source[m.id] ? <Badge size="small" color="neutral">{`Offline example · ${source[m.id].replace('fallback:', '')}`}</Badge> : null}
+            </div>
             {mine.map((l, i) => (
               <div className="lesson" key={l.signal}>
                 <Text size="small" weight="semibold">{l.signal}</Text>

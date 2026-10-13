@@ -341,3 +341,6 @@ table.simple tr:last-child td { border-bottom: 0; }
 .drawer.tour-focus { position: fixed; z-index: 41; }
 .tour-card.left { left: 24px; }
 .control { flex-wrap: wrap; }
+.ai-note { font-size: 12px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; }
+.ai-note.ok { background: var(--primary-faded); color: var(--primary-dark); }
+.ai-note.no { background: var(--notice-faded); color: hsla(25, 100%, 30%, 1); }

@@ -52,7 +52,7 @@ interface Ctx {
   toast: string | null;
   showToast: (t: string) => void;
   lessons: Record<string, Lesson[]>;
-  makeLessons: (text: string) => void;
+  makeLessons: (text: string, given?: { signal: string; change: string; layer: Layer }[], source?: string) => void;
   toggleLesson: (i: number) => void;
   settings: Settings;
   updateSettings: (s: Partial<Settings>) => void;
@@ -111,11 +111,11 @@ export function Provider({ children }: { children: React.ReactNode }) {
     addLog('You', `Undid decision on “${a.title}”.`);
   }, [addLog]);
 
-  const makeLessons = useCallback((text: string) => {
-    const ls = lessonsFromFeedback(text, merchantId).map((l) => ({ ...l, applied: false }));
+  const makeLessons = useCallback((text: string, given?: { signal: string; change: string; layer: Layer }[], source?: string) => {
+    const ls = (given ?? lessonsFromFeedback(text, merchantId)).map((l) => ({ ...l, applied: false }));
     setLessons((m) => ({ ...m, [merchantId]: ls }));
     addLog('You', 'Shared season feedback.');
-    addLog('Seasons', `Turned feedback into ${ls.length} proposed change${ls.length === 1 ? '' : 's'} for the next plan.`);
+    addLog('Seasons', `Turned feedback into ${ls.length} proposed change${ls.length === 1 ? '' : 's'} for the next plan${source ? ` (${source})` : ''}.`);
   }, [merchantId, addLog]);
 
   const toggleLesson = useCallback((i: number) => {

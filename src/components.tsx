@@ -11,6 +11,7 @@ import {
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
 import { products, runsOn, readiness, quickInsights, tourSteps } from './extras';
+import { aiRewrite, RewriteMode } from './ai';
 
 /* ---------------- Shell ---------------- */
 
@@ -272,6 +273,8 @@ export function ApprovalDrawer() {
   const { drawer: a, openDrawer, approve, skip, merchant, settings } = useSeasons();
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState<RewriteMode | null>(null);
+  const [aiNote, setAiNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if (!a) return;
@@ -279,7 +282,18 @@ export function ApprovalDrawer() {
     a.recipients?.forEach((r) => { s[r.name] = r.optedIn; });
     setSelected(s);
     setMsg(a.message ?? '');
+    setAiNote(null);
+    setBusy(null);
   }, [a]);
+
+  const rewrite = async (mode: RewriteMode) => {
+    if (!a) return;
+    setBusy(mode); setAiNote(null);
+    const r = await aiRewrite(merchant.name, msg, mode, settings.discountCap);
+    if (r.ok) { setMsg(r.message); setAiNote({ ok: true, text: 'Rewritten by Gemini · Seasons checked it: link and name kept, STOP kept, no new discounts or amounts.' }); }
+    else setAiNote({ ok: false, text: `${r.reason}. Your message is unchanged.` });
+    setBusy(null);
+  };
 
   const firstSelected = useMemo(() => a?.recipients?.find((r) => selected[r.name]), [a, selected]);
   if (!a) return null;
@@ -352,8 +366,18 @@ export function ApprovalDrawer() {
             )}
 
             {isMsg && (
-              <TextArea label="Message (edit freely)" value={msg} onChange={({ value }) => setMsg(value ?? '')} numberOfLines={5}
-                helpText="{first_name} and the payment link are filled in for each customer." />
+              <div className="stack gap-8">
+                <TextArea label="Message (edit freely)" value={msg} onChange={({ value }) => setMsg(value ?? '')} numberOfLines={5}
+                  helpText="{first_name} and the payment link are filled in for each customer." />
+                <div className="row gap-8 wrap">
+                  <span className="row gap-4"><SparklesIcon size="small" color="surface.icon.primary.normal" /><Text size="small" weight="semibold">Rewrite with AI</Text></span>
+                  {([['hindi', 'Hindi'], ['hinglish', 'Hinglish'], ['shorter', 'Shorter'], ['friendlier', 'Friendlier']] as [RewriteMode, string][]).map(([mode, label]) => (
+                    <Button key={mode} size="xsmall" variant="secondary" isLoading={busy === mode} isDisabled={!!busy && busy !== mode} onClick={() => rewrite(mode)}>{label}</Button>
+                  ))}
+                  {msg !== a.message && <Button size="xsmall" variant="tertiary" onClick={() => { setMsg(a.message ?? ''); setAiNote(null); }}>Back to original</Button>}
+                </div>
+                {aiNote && <div className={`ai-note ${aiNote.ok ? 'ok' : 'no'}`}>{aiNote.text}</div>}
+              </div>
             )}
 
             {!isMsg && a.settingChange && (
