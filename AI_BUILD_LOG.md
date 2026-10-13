@@ -40,9 +40,6 @@ Not AI, but used: Razorpay Payment Links API (test mode only), Razorpay Blade de
 
 These are the long prompts where I set direction. Most were dictated, which is why they read like speech.
 
-**Pushing back on the obvious problem**
-> "You know the problem is all of them have used AI, and AI has suggested them these. That is why we are trying out of the box. This cannot be the only problem of Razorpay."
-
 **Asking for criticism, not agreement**
 > "Find out a bit… research about it a bit more and let me know how much this idea is feasible. Be a critic here."
 
