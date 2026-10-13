@@ -6,7 +6,7 @@ Seasons learns when each merchant's customers pay (across the year, month and we
 
 - Built with React, TypeScript, Vite and Razorpay's open-source Blade design system (MIT).
 - All merchants and numbers are synthetic, modelled on one real merchant's payment pattern and one merchant interview.
-- AI outputs (explanations, drafts, lessons from feedback) are pre-generated or rule-based in this prototype.
+- Gemini runs live: it translates customer messages (Hindi, Hinglish), rewrites them, and turns season notes into lessons. Its output is checked before the merchant sees it. Razorpay Payment Links are created live in test mode on approval. See [AI_BUILD_LOG.md](AI_BUILD_LOG.md).
 
 ```
 npm install
