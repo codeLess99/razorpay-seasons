@@ -134,6 +134,17 @@ Message:
       return res.status(200).json({ message, model });
     }
 
+    if (body.task === 'status') {
+      // Diagnostics only: which model would be used. Never returns the key.
+      const key = apiKey();
+      if (!key) return res.status(503).json({ error: 'no-key' });
+      const t0 = Date.now();
+      const r = await fetch(`${BASE}/models?pageSize=200`, { headers: { 'x-goog-api-key': key } });
+      const data = r.ok ? await r.json() : {};
+      const flash = (data?.models ?? []).map((m: { name: string }) => String(m.name).replace(/^models\//, '')).filter((n: string) => /flash/i.test(n));
+      return res.status(200).json({ listStatus: r.status, ms: Date.now() - t0, chosenModel, discovered: await discoverModel(key), flash: flash.slice(0, 30) });
+    }
+
     return res.status(400).json({ error: 'task' });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'error';
