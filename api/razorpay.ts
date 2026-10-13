@@ -24,7 +24,7 @@ export default async function handler(req: Req, res: Res) {
 
   const amountRupees = Math.round(Number(body.amount));
   if (!Number.isFinite(amountRupees) || amountRupees < 1 || amountRupees > 50000) return res.status(400).json({ error: 'amount' });
-  const names = (Array.isArray(body.customers) ? body.customers : []).map((n) => String(n).slice(0, 60)).filter(Boolean).slice(0, 8);
+  const names = (Array.isArray(body.customers) ? body.customers : []).map((n) => String(n).slice(0, 60)).filter(Boolean).slice(0, 5);
   if (!names.length) return res.status(400).json({ error: 'customers' });
   const description = String(body.description ?? 'Payment').slice(0, 200);
   const merchant = String(body.merchant ?? '').slice(0, 60);

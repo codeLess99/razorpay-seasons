@@ -325,7 +325,9 @@ export function ApprovalDrawer() {
       if (la) {
         setCreating(true);
         const names = (a.recipients ?? []).filter((r) => selected[r.name]).map((r) => r.name);
-        const r = await createTestLinks(names, la.amount, la.description, merchant.name);
+        // Razorpay test mode limits bursts, so the prototype creates the first 5 now; the rest would be created at send time.
+        const r = await createTestLinks(names.slice(0, 5), la.amount, la.description, merchant.name);
+        if (r.ok && n > r.links.filter((l) => l.ok).length) r.links.push({ name: `${n - r.links.filter((l) => l.ok).length} more`, ok: false });
         setCreating(false);
         if (r.ok) approve(a, note, detail, r.links, 'test');
         else approve(a, note, `${detail} (${r.reason}; sample links shown.)`, undefined, 'sample');
@@ -774,6 +776,7 @@ export function CreatedLinks({ links, mode }: { links?: { name: string; url?: st
           <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="plink">{l.name.split(' (')[0]} <span>{l.url!.replace('https://', '')}</span></a>
         ))}
         {ok.length > 4 && <span className="plink more">+{ok.length - 4} more</span>}
+        {links.some((l) => !l.ok) && <span className="plink more">Links for the other {Math.max(0, (parseInt(links.find((l) => !l.ok && /more$/.test(l.name))?.name ?? '0', 10) || links.filter((l) => !l.ok).length))} customers are created when the message goes out</span>}
       </div>
     </div>
   );
