@@ -10,6 +10,8 @@ import { useSeasons } from './state';
 import { DAYS, BLOCKS, Layer, formatINR } from './data';
 import { ActionList, Facts, Insight, RayWhatsApp, layerName, QuickInsights, ReadinessPanel, ConfirmDialog } from './components';
 import { aiLessons } from './ai';
+import { thinking, Jump } from './thinking';
+import { merchants } from './data';
 import { YearStrip, PlaybookTag, Ring, usePlanProgress, ReadinessPlan, MiniWeek, MiniMonth, MiniYear, HowFlow, shortFact } from './visuals';
 
 const PRIMARY = 'hsl(218, 89%, 51%)';
@@ -433,6 +435,56 @@ export function ActivityView() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* ---------------- Product thinking (for reviewers) ---------------- */
+
+export function ThinkingView() {
+  const { setMerchantId, setView, openDrawer } = useSeasons();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const jump = (j: Jump) => {
+    setMerchantId(j.merchant);
+    setView(j.view);
+    if (j.drawer) {
+      const m = merchants.find((x) => x.id === j.merchant)!;
+      window.setTimeout(() => openDrawer(m.actions.find((a) => a.id === j.drawer) ?? null), 80);
+    }
+    window.setTimeout(() => document.querySelector('.main')?.scrollTo({ top: 0, behavior: 'smooth' }), 60);
+  };
+  return (
+    <div className="stack gap-12" data-tour="thinking">
+      <div className="thinking-intro">
+        <Heading size="small">The product thinking behind Seasons</Heading>
+        <Text size="small" color="surface.text.gray.muted">Each question a reviewer would ask, the short answer, the detail, and a link to where you can see it in this prototype.</Text>
+      </div>
+      {thinking.map((t) => (
+        <div className={`card think ${open[t.id] ? 'open' : ''}`} key={t.id}>
+          <button className="think-head" onClick={() => setOpen((o) => ({ ...o, [t.id]: !o[t.id] }))} aria-expanded={!!open[t.id]}>
+            <span className="think-tag">{t.tag}</span>
+            <span className="stack gap-4" style={{ flex: 1, textAlign: 'left' }}>
+              <span className="think-q">{t.q}</span>
+              <span className="think-short">{t.short}</span>
+            </span>
+            <span className="think-chev">{open[t.id] ? '−' : '+'}</span>
+          </button>
+          {open[t.id] && (
+            <div className="think-body">
+              {t.body.map((b, i) =>
+                'p' in b ? <p key={i}>{b.p}</p>
+                  : 'list' in b ? <ul key={i}>{b.list.map((x) => <li key={x}>{x}</li>)}</ul>
+                    : <table key={i} className="simple"><thead><tr>{b.table.head.map((h) => <th key={h}>{h}</th>)}</tr></thead><tbody>{b.table.rows.map((r) => <tr key={r[0]}>{r.map((c, k) => <td key={k}>{c}</td>)}</tr>)}</tbody></table>,
+              )}
+            </div>
+          )}
+          {t.jumps.length > 0 && (
+            <div className="think-jumps">
+              {t.jumps.map((j) => <Button key={j.label} size="xsmall" variant="secondary" icon={ArrowRightIcon} iconPosition="right" onClick={() => jump(j)}>{j.label}</Button>)}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   SettingsIcon, CalendarIcon, SparklesIcon, CloseIcon, CheckCircleIcon, LockIcon, ClockIcon,
   ShoppingBagIcon, EducationIcon, AwardIcon, ThermometerIcon, MessageCircleIcon, ArrowRightIcon,
   InfoIcon, SearchIcon, BellIcon, HelpCircleIcon, TrendingUpIcon, HistoryIcon, SlidersIcon,
-  RazorpayIcon, SunIcon, PlayCircleIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, TranslateIcon, ChevronDownIcon, CheckIcon,
+  RazorpayIcon, SunIcon, PlayCircleIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, TranslateIcon, ChevronDownIcon, CheckIcon, BookIcon,
 } from '@razorpay/blade/components';
 import { useSeasons, View } from './state';
 import { merchants, Action, Merchant, Layer, TODAY } from './data';
@@ -17,6 +17,7 @@ import { aiRewrite, RewriteMode } from './ai';
 /* ---------------- Shell ---------------- */
 
 export function TopNav() {
+  const { view, setView } = useSeasons();
   return (
     <header className="topnav">
       <div className="brand">
@@ -29,7 +30,9 @@ export function TopNav() {
         <span className="topnav-tab">More</span>
       </nav>
       <div className="topnav-right">
-        <span className="proto-badge">Prototype</span>
+        <button className={`judges-btn ${view === 'thinking' ? 'on' : ''}`} data-tour="judges" onClick={() => { setView('thinking'); document.querySelector('.main')?.scrollTo({ top: 0 }); }}>
+          <BookIcon size="small" color="currentColor" />Product thinking<span>· for the judges</span>
+        </button>
         <LanguageSwitch />
         <SearchIcon size="medium" color="surface.icon.gray.muted" />
         <HelpCircleIcon size="medium" color="surface.icon.gray.muted" />

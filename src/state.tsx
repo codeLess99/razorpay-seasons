@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { merchants, Merchant, Action, Layer, lessonsFromFeedback } from './data';
 
-export type View = 'overview' | 'year' | 'month' | 'week' | 'review' | 'controls' | 'activity';
+export type View = 'overview' | 'year' | 'month' | 'week' | 'review' | 'controls' | 'activity' | 'thinking';
 export type TestLink = { name: string; url?: string; ok: boolean };
 export type ActionState = { state: 'pending' | 'approved' | 'skipped'; note?: string; links?: TestLink[]; linkMode?: 'test' | 'sample' };
 export type LogEntry = { time: string; merchantId: string; actor: 'Seasons' | 'You'; text: string };

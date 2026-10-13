@@ -2,11 +2,11 @@ import { BladeProvider } from '@razorpay/blade/components';
 import { bladeTheme } from '@razorpay/blade/tokens';
 import { Provider, useSeasons } from './state';
 import { TopNav, SideNav, PageHeader, ApprovalDrawer, WhatsAppModal, Toast, Tour } from './components';
-import { Overview, YearView, MonthView, WeekView, ReviewView, ControlsView, ActivityView } from './views';
+import { Overview, YearView, MonthView, WeekView, ReviewView, ControlsView, ActivityView, ThinkingView } from './views';
 
 function Content() {
   const { view } = useSeasons();
-  const V = { overview: Overview, year: YearView, month: MonthView, week: WeekView, review: ReviewView, controls: ControlsView, activity: ActivityView }[view];
+  const V = { overview: Overview, year: YearView, month: MonthView, week: WeekView, review: ReviewView, controls: ControlsView, activity: ActivityView, thinking: ThinkingView }[view];
   return (
     <div className="app">
       <TopNav />
