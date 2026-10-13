@@ -53,7 +53,7 @@ These are the long prompts where I set direction. Most were dictated, which is w
 > "This is the HTML and the CSS, to help you figure out how our agent should look like." *(Razorpay dashboard markup I shared, so the prototype uses Razorpay's own Blade design system.)*
 
 **Reviewing a version**
-> "Be critical of it first of all." Then: "Go ahead, one thing: do not make it crowded, and also update the tour accordingly, so that the judge can find out things easily."
+> "Be critical of it first of all." Then: "Go ahead, one thing: do not make it crowded, and also update the tour accordingly, so that the user can find out things easily."
 
 **Questioning a feature on ethics**
 > "Predictions from similar merchants: is not this privacy invasion?" *(This led to benchmarks that use only aggregated ranges from 50+ merchants and never show names.)*
@@ -62,7 +62,7 @@ These are the long prompts where I set direction. Most were dictated, which is w
 > "Before we move to the one-page product note, go through the brief and go through what a successful PM does. Find out things for that and then figure out if we are missing anything. If everything is fine, only then we move to the one-page product note."
 
 **Stopping a feature before it went in**
-> "Is it a good idea to add the product thinking part for the judges? I'm still not sure. Is it said somewhere? Because at the end of the day, we are building a prototype. So let's first figure that out if it's a good idea or not."
+> "Is it a good idea to add the product thinking part for the users? I'm still not sure. Is it said somewhere? Because at the end of the day, we are building a prototype. So let's first figure that out if it's a good idea or not."
 
 **Making the write-up mine**
 > "These are my thoughts. Collate it and make it yours… The most important thing is that it should come from a person like me. Refine them and show them that this is why we made it."
