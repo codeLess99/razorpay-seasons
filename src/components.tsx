@@ -366,7 +366,7 @@ export function ApprovalDrawer() {
             </div>
 
             {isMsg && a.recipients && (
-              <div className="stack gap-8">
+              <div className="stack gap-8" data-tour="recipients">
                 <div className="row between">
                   <Text size="small" weight="semibold" color="surface.text.gray.muted">WHO GETS IT{totalNote}</Text>
                   <Text size="small" color="surface.text.gray.muted">{chosen} selected</Text>
@@ -391,7 +391,7 @@ export function ApprovalDrawer() {
             )}
 
             {isMsg && (
-              <div className="stack gap-8">
+              <div className="stack gap-8" data-tour="message">
                 <TextArea label="Message (edit freely)" value={msg} onChange={({ value }) => setMsg(value ?? '')} numberOfLines={5}
                   helpText="{first_name} and the payment link are filled in for each customer." />
                 <div className="msg-tools">
@@ -666,15 +666,15 @@ export function ConfirmDialog({ open, title, body, confirmLabel, onConfirm, onCa
 /* ---------------- Guided tour ---------------- */
 
 export function Tour() {
-  const { tourStep, setTourStep, setMerchantId, setView, openDrawer } = useSeasons();
+  const { tourStep, setTourStep, setMerchantId, setView, openDrawer, merchantId, drawer } = useSeasons();
   useEffect(() => {
     document.querySelectorAll('.tour-focus').forEach((el) => el.classList.remove('tour-focus'));
     if (tourStep === null) return;
     const st = tourSteps[tourStep];
-    setMerchantId(st.merchant);
+    if (merchantId !== st.merchant) setMerchantId(st.merchant);
     setView(st.view);
     const t1 = window.setTimeout(() => {
-      if (st.drawer) {
+      if (st.drawer && drawer?.id !== st.drawer) {
         const m = merchants.find((x) => x.id === st.merchant)!;
         openDrawer(m.actions.find((a) => a.id === st.drawer) ?? null);
       }
@@ -693,7 +693,7 @@ export function Tour() {
   const st = tourSteps[tourStep];
   const last = tourStep === tourSteps.length - 1;
   const end = () => { openDrawer(null); setTourStep(null); setMerchantId('mithas'); setView('overview'); };
-  const go = (n: number) => { if (st.drawer) openDrawer(null); setTourStep(n); };
+  const go = (n: number) => { if (st.drawer && !tourSteps[n].drawer) openDrawer(null); setTourStep(n); };
   return (
     <div className={`tour-card ${st.drawer ? 'left' : ''}`} role="dialog" aria-label="Product tour">
       <div className="row between">
