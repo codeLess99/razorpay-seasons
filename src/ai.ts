@@ -3,7 +3,7 @@ import { Layer, Merchant, lessonsFromFeedback } from './data';
 export type LessonOut = { signal: string; change: string; layer: Layer };
 export type AiResult<T> = { ok: true; value: T; source: 'gemini' } | { ok: false; value: T; source: 'fallback'; reason: string };
 
-async function call(body: object, timeoutMs = 18000) {
+async function call(body: object, timeoutMs = 28000) {
   const ctrl = new AbortController();
   const t = window.setTimeout(() => ctrl.abort(), timeoutMs);
   try {

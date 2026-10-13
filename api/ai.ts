@@ -3,7 +3,8 @@
 // If the preferred model name has been retired, it asks Google for the current Flash models and picks one.
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const PREFERRED = [process.env.GEMINI_MODEL, 'gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'].filter(Boolean) as string[];
+// Lite Flash models answer short tasks in a few seconds; full Flash models 'think' first and can take 20s+.
+const PREFERRED = [process.env.GEMINI_MODEL, 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-flash-latest'].filter(Boolean) as string[];
 let chosenModel: string | null = null; // remembered while this function instance is warm
 
 type Req = { method?: string; body?: unknown };
@@ -21,7 +22,7 @@ async function discoverModel(key: string): Promise<string | null> {
     .filter((m: { supportedGenerationMethods?: string[] }) => (m.supportedGenerationMethods ?? []).includes('generateContent'))
     .map((m: { name: string }) => String(m.name).replace(/^models\//, ''))
     .filter((n: string) => /flash/i.test(n) && !/(image|tts|audio|live|embedding)/i.test(n));
-  const stable = all.filter((n) => !/(thinking|exp|preview|lite)/i.test(n));
+  const stable = all.filter((n) => !/(thinking|exp|preview)/i.test(n));
   for (const p of PREFERRED) if (all.includes(p)) return p;
   return stable.sort().reverse()[0] ?? all.sort().reverse()[0] ?? null;
 }
@@ -42,11 +43,11 @@ async function gemini(prompt: string, schema: object) {
   const key = apiKey();
   if (!key) throw new Error('no-key');
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 20000);
+  const t = setTimeout(() => ctrl.abort(), 25000);
   try {
     let model = chosenModel ?? PREFERRED[0];
     let r = await generate(model, key, prompt, schema, ctrl.signal);
-    if (r.status === 404) {
+    if (r.status === 404 || r.status === 400) {
       const found = await discoverModel(key);
       if (!found) throw new Error('gemini-no-model');
       model = found;
