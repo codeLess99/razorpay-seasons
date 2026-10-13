@@ -462,3 +462,4 @@ table.simple tr:last-child td { border-bottom: 0; }
 .wa-cost span { font-size: 12px; color: var(--text-muted); }
 
 html[lang='hi'] body, html[lang='hi'] button { font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
+.drawer-foot button { white-space: nowrap; }

@@ -395,7 +395,7 @@ export function ControlsView() {
         </div>
         {(['week', 'month', 'year'] as Layer[]).map((l) => (
           <div className="control" key={l}>
-            <div className="stack gap-4"><Text size="medium" weight="semibold">{layerName[l]} suggestions</Text></div>
+            <div className="stack gap-4"><Text size="medium" weight="semibold">{`${layerName[l]} suggestions`}</Text></div>
             <Switch accessibilityLabel={`${l} layer`} isChecked={s.layers[l]} onChange={({ isChecked }) => change(`${layerName[l].toLowerCase()} suggestions ${isChecked ? 'on' : 'off'}`, () => updateSettings({ layers: { ...s.layers, [l]: isChecked } }), false)} />
           </div>
         ))}

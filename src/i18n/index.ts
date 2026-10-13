@@ -13,7 +13,7 @@ const days: Record<string, string> = { Mon: 'सोम', Tue: 'मंगल', We
 const months: Record<string, string> = {
   Jan: 'जन॰', Feb: 'फ़र॰', Mar: 'मार्च', Apr: 'अप्रै॰', May: 'मई', Jun: 'जून', Jul: 'जुला॰', Aug: 'अग॰', Sep: 'सित॰', Oct: 'अक्टू॰', Nov: 'नवं॰', Dec: 'दिस॰',
 };
-const dateWords: Record<string, string> = { ...days, ...months, AM: 'AM', PM: 'PM', h: 'h' };
+const dateWords: Record<string, string> = { ...days, ...months, AM: 'AM', PM: 'PM', h: 'h', st: '', nd: '', rd: '', th: '' };
 
 const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^(\d+) of (\d+) ready$/, (m) => `${m[2]} में से ${m[1]} तैयार`],
@@ -28,12 +28,16 @@ const patterns: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Next: (.+) by (.+)\.$/, (m) => `अगला: ${tr(m[1])}, ${tr(m[2])} तक।`],
   [/^Saved · (.+)$/, (m) => `सेव किया · ${tr(m[1])}`],
   [/^(\w+) dashboard coming soon\..*$/, (m) => `${tr(m[1])} डैशबोर्ड जल्द आ रहा है।`],
+  [/^Show all (\d+) tasks(?: \((\d+) more to do\))?$/, (m) => `सभी ${m[1]} काम दिखाएँ${m[2] ? ` (${m[2]} और बाकी)` : ''}`],
+  [/^(\d+) Friday (bookings|doubles) · last seen (\d+) days ago$/, (m) => `शुक्रवार की ${m[1]} ${m[2] === 'doubles' ? 'डबल्स' : 'बुकिंग'} · आख़िरी बार ${m[3]} दिन पहले`],
+  [/^Slide (\d+)$/, (m) => `स्लाइड ${m[1]}`],
+  [/^The (\w+) layer is switched off in Controls\.$/, (m) => `${tr(m[1])} लेयर नियंत्रण में बंद है।`],
   [/^(\d+) selected$/, (m) => `${m[1]} चुने गए`],
   [/^(\d+) days?$/, (m) => `${m[1]} दिन`],
 ];
 
 const isDateish = (s: string) => /^[\w\s,.:·–\-+~()/✓]+$/.test(s) && (s.match(/[A-Za-z]+/g) ?? []).every((w) => w in dateWords);
-const mapDate = (s: string) => s.replace(/[A-Za-z]+/g, (w) => dateWords[w] ?? w);
+const mapDate = (s: string) => s.replace(/(\d+)(st|nd|rd|th)\b/g, '$1 तारीख़').replace(/[A-Za-z]+/g, (w) => dateWords[w] ?? w);
 
 // Translate one string. Returns null when nothing applies (the English stays).
 export function tr(s: string, depth = 0): string {
@@ -46,7 +50,7 @@ function trOrNull(s: string, depth = 0): string | null {
   for (const [re, fn] of patterns) { const m = s.match(re); if (m) return fn(m); }
   if (depth > 2) return null;
   // Composite labels: "A · B", "A: B", "A (B)". Translate the parts that we know.
-  for (const sep of [' · ', ': ']) {
+  for (const sep of [': ', ' · ']) {
     if (s.includes(sep)) {
       const parts = s.split(sep).map((p) => trOrNull(p, depth + 1));
       if (parts.some((p) => p !== null)) return s.split(sep).map((p, i) => parts[i] ?? p).join(sep);
